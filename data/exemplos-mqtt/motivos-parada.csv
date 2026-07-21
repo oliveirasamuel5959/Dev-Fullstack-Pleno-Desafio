@@ -1,0 +1,9 @@
+# Motivos de parada (para o Pareto de perdas). planejada=true não desconta Disponibilidade.
+motivo_codigo,descricao,planejada
+SETUP,Setup / troca de artigo,true
+MANUT_PREV,Manutenção preventiva,true
+QBR_AGULHA,Quebra de agulha,false
+QBR_FIO,Quebra de fio,false
+FALTA_MAT,Falta de matéria-prima,false
+AJUSTE_QUAL,Ajuste por qualidade,false
+FALTA_OPER,Falta de operador,false

@@ -1,0 +1,7 @@
+# Catálogo de máquinas (referência para o modelo de dados e cálculo de OEE)
+# tempo_ciclo_ideal_s = tempo teórico para produzir 1 unidade.
+maquina_id,galpao,linha,tipo,tempo_ciclo_ideal_s
+TEAR-G1-L2-07,G1,L2,tear_circular,0.5
+URDI-G2-L1-03,G2,L1,urdideira,0.02
+TING-G3-L1-01,G3,L1,tingimento,3.0
+RAMA-G3-L2-05,G3,L2,rama_acabamento,1.2

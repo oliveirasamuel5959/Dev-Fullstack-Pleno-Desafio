@@ -1,0 +1,10 @@
+// Amostra de eventos de ESTADO e PARADA.
+// Tópicos: .../estado e .../parada
+// Observe: mensagem duplicada (mesmo evento) e uma fora de ordem, propositais,
+// para você exercitar idempotência e ordenação.
+{"schema":"estado.v1","maquina_id":"TEAR-G1-L2-07","ts_sensor":"2026-03-10T13:45:00.000Z","estado":"parado","estado_anterior":"rodando"}
+{"schema":"parada.v1","maquina_id":"TEAR-G1-L2-07","ts_sensor":"2026-03-10T13:45:00.000Z","motivo_codigo":"QBR_AGULHA","motivo_descricao":"Quebra de agulha","planejada":false}
+{"schema":"parada.v1","maquina_id":"TEAR-G1-L2-07","ts_sensor":"2026-03-10T13:45:00.000Z","motivo_codigo":"QBR_AGULHA","motivo_descricao":"Quebra de agulha","planejada":false}
+{"schema":"estado.v1","maquina_id":"TEAR-G1-L2-07","ts_sensor":"2026-03-10T13:52:12.000Z","estado":"rodando","estado_anterior":"parado"}
+{"schema":"estado.v1","maquina_id":"TEAR-G1-L2-07","ts_sensor":"2026-03-10T13:44:59.500Z","estado":"rodando","estado_anterior":"rodando"}
+// A última linha chega DEPOIS mas tem ts anterior (late/out-of-order event).

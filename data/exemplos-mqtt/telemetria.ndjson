@@ -1,0 +1,7 @@
+// Amostra de mensagens de TELEMETRIA (tópico: fabrica/{galpao}/{linha}/{maquina}/telemetria)
+// Formato: NDJSON (uma mensagem por linha). ts_sensor em UTC ISO-8601.
+{"schema":"telemetria.v1","maquina_id":"TEAR-G1-L2-07","ts_sensor":"2026-03-10T13:45:02.140Z","rpm":118.4,"voltas_acumuladas":90418223,"temperatura_c":41.2,"vibracao_mm_s":2.1}
+{"schema":"telemetria.v1","maquina_id":"TEAR-G1-L2-07","ts_sensor":"2026-03-10T13:45:03.150Z","rpm":117.9,"voltas_acumuladas":90418341,"temperatura_c":41.3,"vibracao_mm_s":2.2}
+{"schema":"telemetria.v1","maquina_id":"TEAR-G1-L2-07","ts_sensor":"2026-03-10T13:45:04.160Z","rpm":0.0,"voltas_acumuladas":90418341,"temperatura_c":41.3,"vibracao_mm_s":0.1}
+{"schema":"telemetria.v1","maquina_id":"URDI-G2-L1-03","ts_sensor":"2026-03-10T13:45:02.500Z","rpm":542.0,"voltas_acumuladas":12043988,"temperatura_c":38.7,"vibracao_mm_s":1.4}
+// Nota: a 3ª linha mostra rpm=0 com voltas estáveis => provável início de parada.

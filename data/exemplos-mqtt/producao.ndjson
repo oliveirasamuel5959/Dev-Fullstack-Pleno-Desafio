@@ -1,0 +1,4 @@
+// Amostra de eventos de PRODUCAO/REFUGO (tópico: .../producao)
+{"schema":"producao.v1","maquina_id":"TEAR-G1-L2-07","ts_sensor":"2026-03-10T14:00:00.000Z","unidades_produzidas":21500,"unidades_refugo":900,"ordem_producao":"OP-2026-00871"}
+{"schema":"producao.v1","maquina_id":"TEAR-G1-L2-07","ts_sensor":"2026-03-10T15:00:00.000Z","unidades_produzidas":22100,"unidades_refugo":410,"ordem_producao":"OP-2026-00871"}
+{"schema":"producao.v1","maquina_id":"URDI-G2-L1-03","ts_sensor":"2026-03-10T14:00:00.000Z","unidades_produzidas":48000,"unidades_refugo":120,"ordem_producao":"OP-2026-00854"}
