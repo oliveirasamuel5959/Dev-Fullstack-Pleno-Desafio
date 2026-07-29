@@ -98,3 +98,4 @@ fatores diz mais do que a resposta "certa".
   pipeline - um _walking skeleton_ que roda é suficiente.
 
 Boa sorte! Estamos mais interessados no **arquiteto** do que no _pixel_. 🚀
+Em caso de dúvidas contate-nos: paulo.brandao@sp.senai.br e matias.lopes@sp.senai.br
