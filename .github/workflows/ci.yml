@@ -63,7 +63,7 @@ jobs:
         ports:
           - 1883:1883
         options: >-
-          --health-cmd "mosquitto_sub -t '$$SYS/#' -C 1 -T 5"
+          --health-cmd "mosquitto_pub -h localhost -t health/check -m ok -q 0 || exit 1"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 3
@@ -78,7 +78,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U oee -d oee_textil"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
