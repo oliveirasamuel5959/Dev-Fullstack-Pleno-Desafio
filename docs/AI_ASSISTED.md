@@ -46,18 +46,24 @@ Demonstre isso com artefatos como:
 |------------|---------------|---------------------------|
 | Claude Code (CLI) | Especificação e implementação completa da Fase 0: configuração do harness (ruff, mypy, pytest), layout `src/oee_textil/`, ADR-001, pre-commit, smoke test | deepseek-v4-pro (via API compatível) |
 | Claude Code (CLI) | Geração dos arquivos de spec (`plan.md`, `requirements.md`, `validation.md`) e documentação da Fase 0 | deepseek-v4-pro |
+| Claude Code (CLI) | Implementação completa da Fase 1: modelos Pydantic (4 schemas + union), JSON Schema export, contract tests, ADR-002 | deepseek-v4-pro |
 
 ### 3.2 Decisões em que a IA ajudou - e onde eu discordei dela
 
 - **Fase 0 — Estrutura do plano**: A IA propôs 5 task groups com verificação por grupo, o que fez sentido. Concordei com a estrutura e segui.
 - **D1 (monorepo)**: A IA propôs monorepo com um pacote e N entry points; a justificativa de "um container, comandos diferentes" é pragmática e alinhada com o escopo de skeleton — concordei.
 - **Fase 0 — backfill do validation.md**: A IA notou que `validation.md` estava referenciado mas não existia. Concordei em criá-lo antes de abrir a Fase 1, seguindo a regra do roadmap ("uma fase por vez").
+- **Fase 1 — D1 (Pydantic + discriminated union)**: A IA propôs usar `Annotated[Union[...], Field(discriminator="schema")]` com `TypeAdapter` do Pydantic v2. Concordei — resolve o despacho sem if/elif manual.
+- **Fase 1 — D3 (contract test valida todas as linhas)**: A IA propôs que os defeitos intencionais (`rpm=0`, duplicata, fora de ordem) são schema-valid e não devem ser rejeitados. Concordei — o tratamento é responsabilidade do consumidor (Fase 5), não dos schemas.
 
 ### 3.3 O que eu revisei/corrigi no que a IA gerou
 
 - **`[build-system]` prematuro**: A IA adicionou `[build-system]` com hatchling no TG1, mas o build quebrou porque `src/oee_textil/` ainda não existia. Corrigi: movi o `[build-system]` para o TG2, quando o pacote já existe.
 - **`__main__.py` faltando**: `python -m oee_textil` falhou porque o pacote não tinha `__main__.py`. A IA não previu isso no plano inicial; adicionei o arquivo e corrigi o smoke test.
 - **ruff format**: Vários arquivos gerados pela IA falharam `ruff format --check` (docstrings com trailing whitespace, falta de blank line após imports). O ruff fixou automaticamente; a lição é rodar o formatador antes de commitar, não depois.
+- **Fase 1 — `Annotated[Union]` não é instanciável**: A IA usou `Annotated[Union[...], Field(discriminator="schema")]` como tipo diretamente instanciável via `MensagemMQTT(**data)`. Em Python 3.14 + Pydantic v2, `Annotated` não é callable — corrigi usando `TypeAdapter` com `validate_python()`.
+- **Fase 1 — Campo `schema` shadowing BaseModel**: A IA usou `schema` como nome de campo, que conflita com `BaseModel.model_json_schema()`. Corrigi com `model_config = {"protected_namespaces": ()}` e `# type: ignore[assignment]`.
+- **Fase 1 — E501 vs ruff format**: A descrição longa do campo `planejada` causou conflito entre E501 (linha longa) e ruff format (queria juntar a string). Corrigi encurtando a descrição.
 
 ### 3.4 Como otimizei o repositório para IA
 
