@@ -62,10 +62,12 @@ app.include_router(estado_router)
 app.include_router(perdas_router)
 app.include_router(stream_router)
 
-# Dashboard estatico (Fase 8)
+# Dashboard estatico (Fase 8) — montado em /dashboard para nao conflitar com /health
 static_dir = Path(__file__).resolve().parent.parent / "static"
 if static_dir.exists():
-    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
+    app.mount(
+        "/dashboard", StaticFiles(directory=str(static_dir), html=True), name="static"
+    )
 
 
 @app.get("/health")
