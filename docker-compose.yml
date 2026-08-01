@@ -1,0 +1,64 @@
+# Compose — Fase 2: Infra local
+#
+# Dois serviços: Mosquitto (broker MQTT) e TimescaleDB (PostgreSQL + time-series).
+# Rede bridge oee-network compartilhada. Volume pgdata para persistência de dados.
+#
+# Uso:
+#   make up          # sobe ambos
+#   make ps          # verifica status
+#   make test-smoke  # valida conectividade
+#   make down        # para tudo
+#   make clean       # para tudo + remove volume
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: oee-mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    networks:
+      - oee-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mosquitto_sub -t '$$SYS/#' -C 1 -T 5 || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: oee-timescaledb
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: oee
+      POSTGRES_PASSWORD: oee_dev
+      POSTGRES_DB: oee_textil
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/timescaledb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - oee-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oee -d oee_textil"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+networks:
+  oee-network:
+    driver: bridge
+    name: oee-network
+
+volumes:
+  pgdata:
+    name: oee-pgdata
