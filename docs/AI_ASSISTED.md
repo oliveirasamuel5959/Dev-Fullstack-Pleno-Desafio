@@ -48,6 +48,7 @@ Demonstre isso com artefatos como:
 | Claude Code (CLI) | Geração dos arquivos de spec (`plan.md`, `requirements.md`, `validation.md`) e documentação da Fase 0 | deepseek-v4-pro |
 | Claude Code (CLI) | Implementação completa da Fase 1: modelos Pydantic (4 schemas + union), JSON Schema export, contract tests, ADR-002 | deepseek-v4-pro |
 | Claude Code (CLI) | Especificação e implementação completa da Fase 2: docker-compose (mosquitto + timescaledb), smoke tests de conectividade, Makefile | deepseek-v4-pro |
+| Claude Code (CLI) | Especificação e implementação completa da Fase 3: simulador MQTT (CLI argparse), leitor de NDJSON/CSV, publicador na topologia fabrica/... | deepseek-v4-pro |
 
 ### 3.2 Decisões em que a IA ajudou - e onde eu discordei dela
 
@@ -59,6 +60,10 @@ Demonstre isso com artefatos como:
 - **Fase 2 — D1 (Mosquitto anônimo)**: A IA propôs Mosquitto sem autenticação/persistência para o ambiente de dev, com a justificativa de que o walking skeleton não precisa de segurança de produção. Concordei — adicionar auth agora seria complexidade sem ganho na avaliação.
 - **Fase 2 — D3 (Smoke test programático)**: A IA propôs ir além do critério mínimo do roadmap (`docker compose ps` healthy) e adicionar smoke tests em pytest com conexão real. Concordei — demonstra que a infra não apenas "subiu" mas está funcionalmente acessível a partir do código Python.
 - **Fase 2 — D4 (Makefile)**: Eu pedi para adicionar Makefile como entry point unificado. A IA incorporou com targets help/up/down/ps/logs/test-smoke/test/lint/clean, usando `-m smoke` (pytest marker) em vez de `-k smoke` (substring match) para maior precisão. Concordei com a abordagem.
+- **Fase 3 — D1 (argparse stdlib)**: A IA propôs usar argparse em vez de typer/click para evitar dependências novas. Concordei — a CLI tem 6 flags e argparse é suficiente.
+- **Fase 3 — D2 (maquinas.csv como roteamento)**: A IA propôs ler `maquinas.csv` apenas como tabela interna de roteamento (`maquina_id → galpão, linha`), sem publicá-lo como mensagem. Concordei — os dados de catálogo pertencem ao modelo de dados (Fase 4), não ao simulador.
+- **Fase 3 — D3 (intervalo fixo + speed multiplier)**: A IA propôs `--interval` com `--speed` como multiplicador, evitando o modo "real-time por timestamps". Concordei — mais simples, previsível, e não depende de timestamps corretos nos fixtures.
+- **Fase 3 — D4 (QoS 1 padrão)**: A IA propôs QoS 1 (at least once) para todas as mensagens, exercitando a idempotência que o consumidor (Fase 5) precisará tratar. Concordei — alinhado com o eixo de avaliação Event-Driven & MQTT.
 
 ### 3.3 O que eu revisei/corrigi no que a IA gerou
 
@@ -71,6 +76,9 @@ Demonstre isso com artefatos como:
 - **Fase 2 — `test_smoke.py` já existia**: A IA tentou sobrescrever `tests/test_smoke.py` (criado na Fase 0 com testes de importabilidade). Corrigi: mantive os testes existentes e adicionei os novos testes de infra com `@pytest.mark.smoke` no mesmo arquivo, separados por comentários de seção.
 - **Fase 2 — `-m smoke` vs `-k smoke`**: O plano original usava `-k smoke` no Makefile, mas isso capturaria os testes da Fase 0 por substring match no nome do arquivo. A IA ajustou para `-m smoke` (pytest marker), que seleciona apenas os testes explicitamente marcados — mais preciso.
 - **Fase 2 — pre-commit corrigiu formatação**: O ruff format ajustou formatação do `test_smoke.py` no commit (quebra de linha em chamada de função longa). Nada grave — o pre-commit hook funcionou como esperado.
+- **Fase 3 — `TypeAdapter` retorna `Any`**: O `MensagemMQTT.validate_python()` da Fase 1 retorna `Any`, então `msg.maquina_id` não tem tipo conhecido pelo mypy. A IA primeiro tentou `# type: ignore[attr-defined]` (que mypy marcou como unused), depois removeu o ignore completamente — mypy aceitou porque os atributos existem em todos os tipos da union. Funcionou, mas a anotação explícita com cast seria mais segura.
+- **Fase 3 — `CallbackAPIVersion` não exportado**: O mypy reclamou que `paho.mqtt.client` não exporta explicitamente `CallbackAPIVersion`. A IA adicionou `# type: ignore[attr-defined]` no `cli.py` — correto, é uma limitação dos stubs do paho-mqtt.
+- **Fase 3 — `test_entry_point_executa` da Fase 0 não quebrou**: A IA notou que o `__main__.py` do simulador (`python -m oee_textil.simulador`) é diferente do entry point principal (`python -m oee_textil`). O teste da Fase 0 continuou passando sem alterações — bom sinal de isolamento entre fases.
 
 ### 3.4 Como otimizei o repositório para IA
 
