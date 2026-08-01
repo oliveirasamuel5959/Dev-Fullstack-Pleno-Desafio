@@ -55,6 +55,7 @@ Demonstre isso com artefatos como:
 | Claude Code (CLI) | Especificação e implementação completa da Fase 7: API REST FastAPI (5 endpoints), TestClient, OpenAPI, ADR-006 | deepseek-v4-pro |
 | Claude Code (CLI) | Especificação e implementação completa da Fase 8: mini-dashboard ao vivo (SSE + HTML/JS vanilla), 4 cards, ADR-007 | deepseek-v4-pro |
 | Claude Code (CLI) | Especificação da Fase 9: CI/CD com GitHub Actions (ci.yml 4 jobs), ADR-008, DECISOES.md (criação inicial), atualização de AI_ASSISTED.md | deepseek-v4-pro |
+| Claude Code (CLI) | Especificação e implementação completa da Fase 10: ARQUITETURA.md + C4, TRADEOFFS.md, ADR-009 (AWS), Terraform esboço, README fork, fechamento docs | deepseek-v4-pro |
 
 ### 3.2 Decisões em que a IA ajudou - e onde eu discordei dela
 
@@ -80,6 +81,11 @@ Demonstre isso com artefatos como:
 - **Fase 9 — D3 (Sem cache/matrix)**: A IA propôs YAGNI — sem cache de dependências ou matrix build nesta fase. Concordei — o escopo é provar o gate, não otimizar pipeline.
 - **Fase 9 — D4 (DECISOES.md inicial)**: A IA notou que `docs/DECISOES.md` não existia (referenciado pelo mission.md mas nunca criado). Propôs criar o arquivo com todas as decisões documentadas, incluindo backfill das fases anteriores. Concordei — resolve uma lacuna de documentação.
 - **Fase 9 — D5 (Triggers: push na feature + PR main)**: A IA perguntou sobre triggers via AskUserQuestion. Respondi push em `desafio/samuel-oliveira` + PR contra `main`. A IA implementou exatamente o escopo escolhido, com `concurrency: cancel-in-progress` para evitar acúmulo de jobs.
+- **Fase 10 — D1 (AWS como provedor)**: A IA perguntou sobre provedor de nuvem via AskUserQuestion. Respondi AWS. A IA desenhou arquitetura com IoT Core, ECS Fargate, RDS PostgreSQL + TimescaleDB e CloudWatch. Concordei — é a stack mais madura para IoT + container.
+- **Fase 10 — D2 (Terraform esboço)**: A IA propôs esboço de Terraform como código de referência (não applyável). Concordei — documenta a intenção sem exigir conta AWS.
+- **Fase 10 — D3 (README enxuto)**: A IA perguntou sobre tom do README. Respondi "enxuto e direto". A IA estruturou: como rodar, checklist, o que ficou de fora, estrutura de diretórios.
+- **Fase 10 — D4 (C4 em Mermaid)**: A IA propôs diagramas C4 em Mermaid (Contexto, Contêiner, Deploy) para renderização nativa no GitHub. Concordei — versionável, sem dependência externa.
+- **Fase 10 — D5 (TRADEOFFS.md com 6 trade-offs)**: A IA propôs 6 trade-offs alinhados com decisões já documentadas nos ADRs. Concordei — cobre todos os eixos exigidos (monorepo vs micro, MQTT, SSE, banco, linguagem, orquestração).
 
 ### 3.3 O que eu revisei/corrigi no que a IA gerou
 
@@ -111,6 +117,8 @@ Demonstre isso com artefatos como:
 - **Fase 5 — `content_hash` contaminava o próprio cálculo**: A IA detectou que o hash era recalculado incluindo o `content_hash` da chamada anterior (mutação do dict). Corrigiu copiando o dict e adicionando `content_hash` à lista de exclusão.
 - **Fase 9 — `DECISOES.md` inexistente**: O plano dizia "Atualizar docs/DECISOES.md", mas o arquivo não existia. A IA detectou a lacuna e criou o arquivo completo com backfill das Fases 0-8 além da nova entrada de CI/CD. Corrigi: aprovado — era uma lacuna de documentação que precisava ser resolvida.
 - **Fase 9 — Service container health checks**: A IA configurou health checks para os service containers do GHA (Mosquitto e TimescaleDB) com comandos equivalentes aos do `docker-compose.yml`. O comando do Mosquitto usa `$$SYS` (escapado para YAML) — a IA acertou a sintaxe de escape na primeira tentativa.
+- **Fase 10 — `uv.lock` e `*.conf` no .gitignore**: A IA detectou que `uv.lock` e `docker/mosquitto/mosquitto.conf` estavam bloqueados pelo `.gitignore` — arquivos essenciais para build Docker. Corrigiu removendo `uv.lock` e `*.conf` do gitignore e commitando ambos. Sem isso, o CI quebrava no job build-and-smoke.
+- **Fase 10 — CloudWatch Logs no Terraform**: A IA esqueceu de declarar os recursos `aws_cloudwatch_log_group` no esboço de Terraform — estão referenciados no ECS mas não definidos. Corrigi adicionando nota no README do Terraform como item pendente (não criei os resources para manter o esboço enxuto).
 
 ### 3.4 Como otimizei o repositório para IA
 

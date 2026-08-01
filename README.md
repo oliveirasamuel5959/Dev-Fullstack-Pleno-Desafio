@@ -1,101 +1,132 @@
-# Desafio Técnico - Desenvolvedor(a) Pleno Full Stack
+# OEE Têxtil — Walking Skeleton
 
-> **Tema:** Arquitetura de base de software para ingestão de dados IoT (MQTT) e
-> dashboard operacional de **OEE** em uma indústria **Têxtil**.
+[![CI](https://github.com/oliveirasamuel5959/Dev-Fullstack-Pleno-Desafio/actions/workflows/ci.yml/badge.svg)](https://github.com/oliveirasamuel5959/Dev-Fullstack-Pleno-Desafio/actions/workflows/ci.yml)
 
-Bem-vindo(a)! Este desafio **não** é sobre entregar um produto pronto. É sobre
-demonstrar **como você pensa arquitetura de software**: como você estrutura um
-projeto _event-driven_, decide entre monorepo e microsserviços, planeja nuvem e
-CI/CD, e como você incorpora **desenvolvimento assistido por IA**, **harness de
-qualidade** e **otimização de contexto** ao seu fluxo de trabalho.
-
-Você tem **total liberdade de stack, ferramentas e bibliotecas**. A regra é uma
-só: **justifique cada decisão**.
-
----
-
-## 1. Como participar
-
-1. Faça um **fork** deste repositório para a sua conta do GitHub.
-2. Trabalhe no seu fork (recomendado: uma branch `desafio/<seu-nome>`).
-3. Preencha os _templates_ de documentação em [`docs/`](docs/) e construa a
-   **estrutura base** do software (ver [Entregáveis](docs/ENTREGAVEIS.md)).
-4. Ao finalizar, deixe o repositório **público** e nos envie o link.
-   (Opcional: abra um Pull Request do seu fork para este repositório usando o
-   [template de PR](.github/PULL_REQUEST_TEMPLATE.md).)
-
-> ⏱️ **Sugestão:** Priorize profundidade
-> de raciocínio sobre volume de código. **Não** queremos que você implemente o
-> sistema inteiro.
-
----
-
-## 2. O que estamos avaliando (transparência total)
-
-A avaliação é **objetiva e ponderada**. Antes da entrevista, seu repositório
-passará por uma análise minuciosa,
-seguindo critérios públicos. Os eixos avaliados são:
-
-| Eixo | O que observamos |
-|------|------------------|
-| **Arquitetura & Modelagem** | Diagramas C4, _bounded contexts_, fluxo de dados, escolha e defesa do estilo arquitetural |
-| **Event-Driven & MQTT** | Modelagem de tópicos, contratos de mensagem, entrega/QoS, idempotência, _backpressure_ |
-| **Monorepo vs. Microsserviços** | Decisão explícita, _trade-offs_, limites de serviço, estratégia de _deploy_ |
-| **Estratégia de Nuvem** | Componentes gerenciados vs. self-hosted, escalabilidade, custo, observabilidade |
-| **CI/CD** | Pipelines, _quality gates_, estratégia de testes, versionamento, ambientes |
-| **Harness & Dev assistido por IA** | Testes, _linters_, _contract tests_, uso documentado de IA, otimização de contexto |
-| **Modelagem de Dados & OEE** | Cálculo correto de OEE, _time-series_, granularidade, agregações |
-| **Qualidade da Entrega** | Clareza, coerência entre decisão e código, reprodutibilidade |
-
-Os eixos e o método de pontuação estão descritos em
-[`docs/ENTREGAVEIS.md`](docs/ENTREGAVEIS.md). Os **pesos numéricos** de cada eixo
-são de uso interno da banca. **Não há critérios subjetivos ocultos.**
-
----
-
-## 3. Ponto de partida
-
-- 📄 **Contexto de negócio:** [`docs/CONTEXTO_NEGOCIO.md`](docs/CONTEXTO_NEGOCIO.md)
-- 🔧 **Especificação técnica (MQTT, dados, OEE):** [`docs/ESPECIFICACAO_TECNICA.md`](docs/ESPECIFICACAO_TECNICA.md)
-- 📦 **Entregáveis e critérios:** [`docs/ENTREGAVEIS.md`](docs/ENTREGAVEIS.md)
-- 🤖 **IA, Harness e otimização de contexto:** [`docs/AI_ASSISTED.md`](docs/AI_ASSISTED.md)
-- 🧩 **Amostras de payload MQTT:** [`data/exemplos-mqtt/`](data/exemplos-mqtt/)
-- 🏛️ **Registros de decisão (ADR):** [`docs/adr/`](docs/adr/)
-
----
-
-## 4. Cenário de mentoria
-
-Você não trabalha sozinho. Guarde este cenário - ele será discutido na entrevista
-e **não** tem resposta única:
-
-> **Situação.** Um(a) desenvolvedor(a) júnior do seu time, sob pressão de prazo,
-> abre um PR que "faz o dashboard funcionar". Para calcular o OEE, ele(a) decidiu
-> **somar os três fatores (Disponibilidade + Performance + Qualidade) e dividir
-> por 3** - em vez do produto - porque "o número final fica parecido, é mais
-> fácil de explicar para o chão de fábrica e economiza tempo". O(a) júnior está
-> orgulhoso(a) do resultado, e o **supervisor de produção já elogiou a tela** em
-> uma reunião.
+> Resposta ao **Desafio Técnico — Desenvolvedor(a) Pleno Full Stack**:
+> arquitetura _event-driven_ para ingestão de dados IoT (MQTT) e dashboard
+> operacional de **OEE** para a indústria têxtil fictícia **Malharia Contínua
+> S.A.** (3 galpões, ~200 máquinas, 3 turnos).
 >
-> Como **você, dev pleno**, conduz essa situação?
-
-Não queremos apenas a correção técnica. Pense em: corretude e credibilidade do
-indicador, o prazo real, a motivação do(a) júnior, a expectativa já criada no
-cliente interno, e o que você faz **agora** vs. o que você constrói para que o
-erro não se repita. Traga o seu raciocínio - a forma como você equilibra esses
-fatores diz mais do que a resposta "certa".
+> **Branch:** `desafio/samuel-oliveira`
 
 ---
 
-## 5. Regras
+## Como rodar
 
-- ✅ **Vale a pena:** documentar o "porquê", desenhar diagramas, deixar TODOs
-  explícitos onde você conscientemente parou.
-- ✅ **Use IA à vontade** - queremos ver isso. Mas **registre** como usou (ver
-  [`docs/AI_ASSISTED.md`](docs/AI_ASSISTED.md)).
-- ❌ **Não** copie um projeto pronto sem entender/justificar as decisões.
-- ❌ **Não** é necessário conectar a um broker real ou implementar todo o
-  pipeline - um _walking skeleton_ que roda é suficiente.
+```bash
+# 1. Subir infraestrutura (Mosquitto + TimescaleDB)
+docker compose up -d
 
-Boa sorte! Estamos mais interessados no **arquiteto** do que no _pixel_. 🚀
-Em caso de dúvidas contate-nos: paulo.brandao@sp.senai.br e matias.lopes@sp.senai.br
+# 2. Aplicar migrations e popular catálogo
+uv run alembic upgrade head
+uv run python -m oee_textil.seed
+
+# 3. Iniciar o simulador (publica fixtures MQTT)
+uv run python -m oee_textil.simulador --loop
+
+# 4. Subir API + consumidor
+docker compose up -d --build
+
+# 5. Abrir o dashboard
+open http://localhost:8000/dashboard
+```
+
+**Serviços:**
+
+| Serviço | Porta | Descrição |
+|---------|-------|-----------|
+| Mosquitto (MQTT) | 1883 | Broker MQTT — recebe telemetria das máquinas |
+| TimescaleDB | 5432 | PostgreSQL 16 + TimescaleDB — séries temporais + catálogo |
+| API REST | 8000 | FastAPI — endpoints OEE + OpenAPI em `/docs` |
+| Dashboard | 8000 | HTML/JS vanilla em `/dashboard` — atualização SSE ao vivo |
+| Consumidor | — | Assina MQTT, valida schemas, dedup, persiste |
+
+---
+
+## O que foi entregue
+
+| Eixo | Evidência |
+|------|-----------|
+| **Arquitetura & Modelagem** | [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) — C4 Contexto + Contêiner (Mermaid), bounded contexts, fluxo de dados |
+| **Event-Driven & MQTT** | 4 schemas versionados (Pydantic + JSON Schema), topologia `fabrica/{galpao}/{linha}/{maquina}/...`, QoS 1, idempotência (content hash + ON CONFLICT), dead-letter NDJSON — [ADR-002](docs/adr/002-versionamento-schema-evolucao-aditiva.md), [ADR-004](docs/adr/004-idempotencia-ordenacao-backpressure.md) |
+| **Monorepo vs Microsserviços** | Modular Monolith (1 pacote, 1 imagem Docker, múltiplos entry points) — [ADR-001](docs/adr/001-monorepo-um-pacote-n-entry-points.md), [`docs/TRADEOFFS.md`](docs/TRADEOFFS.md) |
+| **Estratégia de Nuvem** | Design AWS (IoT Core, ECS Fargate, RDS, CloudWatch) + C4 Deploy + Terraform esboço — [ADR-009](docs/adr/009-estrategia-nuvem-aws.md), [`infra/terraform/`](infra/terraform/) |
+| **CI/CD** | GitHub Actions: lint → typecheck → test → build-and-smoke — [ADR-008](docs/adr/008-ci-cd-github-actions.md) |
+| **Harness & IA** | ruff + mypy + pytest + pre-commit; 138 testes (unitários + integração + contract + golden OEE) — [`docs/AI_ASSISTED.md`](docs/AI_ASSISTED.md) |
+| **Dados & OEE** | OEE = D × P × Q (produto, nunca média), hypertables TimescaleDB, golden test (≈0,79) — [ADR-003](docs/adr/003-modelagem-dados-raw-first-hypertable.md), [ADR-005](docs/adr/005-janelas-agregacao-late-events.md) |
+| **Qualidade da Entrega** | 14 commits atômicos, 9 ADRs, DECISOES.md, TRADEOFFS.md, README reproducible |
+
+### Documentação
+
+| Documento | Conteúdo |
+|-----------|----------|
+| [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) | Visão geral, C4 Contexto + Contêiner, fluxo de dados, bounded contexts, glossário OEE |
+| [`docs/TRADEOFFS.md`](docs/TRADEOFFS.md) | 6 trade-offs: monorepo vs micro, Mosquitto vs IoT Core, SSE vs WebSocket, PG vs Timestream, Python vs Go, Compose vs K8s |
+| [`docs/DECISOES.md`](docs/DECISOES.md) | Justificativa de cada stack/ferramenta/biblioteca |
+| [`docs/adr/`](docs/adr/) | 9 ADRs (001–009) cobrindo monorepo, schemas, dados, idempotência, OEE, API, SSE, CI/CD, nuvem |
+| [`docs/AI_ASSISTED.md`](docs/AI_ASSISTED.md) | Registro de uso de IA (Fases 0–10), decisões, correções |
+| [`specs/`](specs/) | Roadmap, mission, tech-stack + specs por fase |
+| [`infra/terraform/`](infra/terraform/) | Esboço de infra AWS (IoT Core, ECS, RDS, SQS, ALB) |
+
+---
+
+## O que ficou de fora (e por quê)
+
+| Item | Motivo |
+|------|--------|
+| **Ordenação de eventos com buffer** | Documentado como TODO no [ADR-004](docs/adr/004-idempotencia-ordenacao-backpressure.md). O foco da Fase 5 foi dedup e persistência; o buffer de 30s por máquina é uma melhoria planejada. |
+| **Autenticação / Multi-tenant** | Não-objetivo da [missão](specs/mission.md) §6. O walking skeleton é single-tenant por design. |
+| **Integração com broker real** | O [simulador](src/oee_textil/simulador.py) cobre o escopo do desafio. A migração para IoT Core está documentada no [ADR-009](docs/adr/009-estrategia-nuvem-aws.md). |
+| **UI polida / gráficos** | O [dashboard](src/oee_textil/static/index.html) prova a arquitetura (SSE + REST), não o design. Gráficos complexos exigiram bibliotecas (Chart.js/D3) fora do escopo. |
+| **Cobertura de código** | Não configurada. pytest cobre unitários, integração, contratos e golden test; coverage tool adicionaria complexidade sem valor no momento. |
+| **Alertas / Notificações** | Fora do escopo da missão §6. O sistema calcula OEE; alertas (ex.: OEE < 60%) são camada de aplicação acima. |
+
+---
+
+## Estrutura do repositório
+
+```
+.
+├── .github/workflows/ci.yml     # Pipeline CI/CD (GitHub Actions)
+├── data/exemplos-mqtt/          # Fixtures MQTT (NDJSON + CSV)
+├── docker/                      # Configs de container (mosquitto.conf, init.sql)
+├── docs/
+│   ├── adr/                     # 9 Architecture Decision Records (001–009)
+│   ├── contracts/               # JSON Schema exportado (4 schemas MQTT)
+│   ├── ARQUITETURA.md           # Visão arquitetural + C4
+│   ├── DECISOES.md              # Justificativas de stack
+│   ├── TRADEOFFS.md             # Trade-offs documentados
+│   ├── AI_ASSISTED.md           # Registro de desenvolvimento assistido por IA
+│   └── ENTREGAVEIS.md           # Checklist de entregáveis (rúbrica)
+├── infra/terraform/             # Esboço de infra AWS (não applyável)
+├── migrations/                  # Alembic migrations
+├── specs/                       # Roadmap, missão, tech-stack + specs por fase
+├── src/oee_textil/
+│   ├── core/                    # Config, database (engine, session)
+│   ├── models/                  # SQLAlchemy models (7 entidades)
+│   ├── routes/                  # FastAPI routes (API REST + SSE)
+│   ├── schemas/                 # Pydantic models (4 schemas MQTT)
+│   ├── services/                # Consumidor MQTT, motor OEE
+│   ├── static/                  # Dashboard HTML + CSS + JS vanilla
+│   └── simulador.py             # CLI publicador MQTT
+├── tests/                       # 138 testes (unit, integração, contract, smoke)
+├── docker-compose.yml           # 4 serviços (mosquitto, timescaledb, consumidor, api)
+├── Dockerfile                   # Imagem única, multi-entrypoint
+├── Makefile                     # Entry point unificado (up, test, lint, etc.)
+└── pyproject.toml               # Dependências + config ruff/mypy/pytest
+```
+
+---
+
+## Comandos úteis
+
+```bash
+make help          # Lista todos os targets
+make up            # Sobe Mosquitto + TimescaleDB
+make build         # Build da imagem Docker
+make test          # Roda pytest (todos os testes)
+make test-smoke    # Roda só smoke tests (precisa de infra up)
+make lint          # ruff check + format + mypy
+make seed          # Popula catálogo (máquinas, motivos, turnos)
+make clean         # docker compose down + remove volume
+```

@@ -54,8 +54,15 @@
 | Service containers do GHA (Mosquitto + TimescaleDB) | Testes de integração precisam de broker e banco reais; mock não exercita os eixos Event-Driven e Dados da avaliação. | [ADR-008](adr/008-ci-cd-github-actions.md) |
 | Sem cache/matrix nesta fase | YAGNI: ~15 dependências, `uv sync` <30s; só Python 3.14 existe. | [ADR-008](adr/008-ci-cd-github-actions.md) |
 
-## Nuvem
+## Nuvem (AWS)
 
-> **Decisão adiada** por design para a Fase 10 do roadmap, onde virará ADR
-> próprio (ADR-006). Candidatos: AWS (IoT Core + Fargate + Timestream/RDS)
-> comparando gerenciado vs. self-hosted em custo, escala e observabilidade.
+| Decisão | Justificativa | ADR |
+|---------|---------------|-----|
+| **AWS** (não GCP ou Azure) | Ecossistema IoT mais maduro (IoT Core), free tier generoso, skills do mercado; GCP deprecou IoT Core em 2023. | [ADR-009](adr/009-estrategia-nuvem-aws.md) |
+| **IoT Core** (MQTT gerenciado) | Substitui Mosquitto self-hosted em produção: escala automática, TLS mutual auth, integração nativa com regras SQS/Kinesis. | [ADR-009](adr/009-estrategia-nuvem-aws.md) |
+| **ECS Fargate** (não EKS/Lambda) | Containers serverless sem gestão de nós; 2-3 serviços não justificam Kubernetes; Lambda não suporta subscriber MQTT long-running (timeout 15 min). | [ADR-009](adr/009-estrategia-nuvem-aws.md) |
+| **RDS PostgreSQL + TimescaleDB** (não Timestream) | Mesmo engine e schemas do dev local (drop-in replacement); Timestream não tem FKs, joins ou extensões PostgreSQL. | [ADR-009](adr/009-estrategia-nuvem-aws.md) |
+| **CloudWatch** (logs + métricas + alarmes) | Coleta automática do ECS; sem agente externo; Container Insights para visibilidade de performance. | [ADR-009](adr/009-estrategia-nuvem-aws.md) |
+| **S3** (dead-letter + backups) | Durabilidade 99.999999999%; política de ciclo de vida (expira após 90 dias); substitui arquivo NDJSON local. | [ADR-009](adr/009-estrategia-nuvem-aws.md) |
+| **ALB + Route 53** | HTTPS termination, health checks, roteamento por path; DNS gerenciado com health checks. | [ADR-009](adr/009-estrategia-nuvem-aws.md) |
+| **Terraform** (esboço em `infra/terraform/`) | IaC declarativo, padrão de facto; esboço documenta intenção sem exigir apply. | [ADR-009](adr/009-estrategia-nuvem-aws.md) |
