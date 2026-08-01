@@ -46,15 +46,47 @@ def test_buscar_tempo_planejado():
 
 @pytest.mark.smoke
 def test_buscar_producao_com_dados():
-    """Deve retornar producao e refugo do periodo."""
+    """Deve retornar producao e refugo do periodo (dados inseridos no teste)."""
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+    from oee_textil.models.producao import Producao
+
     inicio = datetime(2026, 3, 10, 13, 0, 0, tzinfo=UTC)
     fim = datetime(2026, 3, 10, 16, 0, 0, tzinfo=UTC)
 
     with SessionLocal() as session:
-        prod, ref = buscar_producao(session, "TEAR-G1-L2-07", inicio, fim)
-        # Fixture tem 2 eventos para TEAR: 21500+22100 = 43600
-        assert prod == 43600, f"Esperado 43600, obtido {prod}"
-        assert ref == 1310, f"Esperado 1310, obtido {ref}"
+        # Inserir dados de teste
+        for ts, prod, ref in [
+            (datetime(2026, 3, 10, 14, 0, 0, tzinfo=UTC), 100, 5),
+            (datetime(2026, 3, 10, 15, 0, 0, tzinfo=UTC), 200, 10),
+        ]:
+            session.execute(
+                pg_insert(Producao)
+                .values(
+                    maquina_id="TEAR-G1-L2-07",
+                    ts_sensor=ts,
+                    unidades_produzidas=prod,
+                    unidades_refugo=ref,
+                    ordem_producao="OP-TEST",
+                )
+                .on_conflict_do_nothing()
+            )
+        session.commit()
+
+        total_prod, total_ref = buscar_producao(
+            session,
+            "TEAR-G1-L2-07",
+            inicio,
+            fim,
+        )
+        assert total_prod == 300, f"Esperado 300, obtido {total_prod}"
+        assert total_ref == 15, f"Esperado 15, obtido {total_ref}"
+
+        # Limpar
+        session.execute(
+            Producao.__table__.delete().where(Producao.maquina_id == "TEAR-G1-L2-07")
+        )
+        session.commit()
 
 
 @pytest.mark.smoke

@@ -25,6 +25,7 @@ def test_todas_tabelas_registradas():
         "estado_maquina",
         "parada",
         "producao",
+        "oee_agregado",
     }
     assert nomes == esperadas, f"Tabelas: {nomes}"
 
