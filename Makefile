@@ -41,6 +41,12 @@ clean:  ## Para containers e remove volume pgdata (perda total de dados)
 test-smoke:  ## Roda smoke tests de conectividade com infraestrutura
 	uv run pytest -m smoke -v
 
+test-docker-sub: ## Roda um comando de mosquitto_sub dentro do container oee-mosquitto
+	docker exec -it oee-mosquitto mosquitto_sub -t "smoke/manual/test" -h localhost -p 1883
+
+test-docker-pub: ## Roda um comando de mosquitto_pub dentro do container oee-mosquitto
+	docker exec -it oee-mosquitto mosquitto_pub -t "smoke/manual/test" -m "hello oee" -h localhost -p 1883
+	
 test:  ## Roda todos os testes
 	uv run pytest -v
 
