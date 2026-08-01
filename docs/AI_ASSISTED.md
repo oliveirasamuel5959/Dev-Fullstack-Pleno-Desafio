@@ -50,6 +50,7 @@ Demonstre isso com artefatos como:
 | Claude Code (CLI) | Especificação e implementação completa da Fase 2: docker-compose (mosquitto + timescaledb), smoke tests de conectividade, Makefile | deepseek-v4-pro |
 | Claude Code (CLI) | Especificação e implementação completa da Fase 3: simulador MQTT (CLI argparse), leitor de NDJSON/CSV, publicador na topologia fabrica/... | deepseek-v4-pro |
 | Claude Code (CLI) | Especificação e implementação completa da Fase 4: modelos SQLAlchemy (7 tabelas), Alembic + migração com hypertable, seed idempotente, ADR-003 | deepseek-v4-pro |
+| Claude Code (CLI) | Especificação e implementação completa da Fase 5: consumidor MQTT (aiomqtt), dedup com content hash, dead-letter NDJSON, Dockerfile + compose, ADR-004 | deepseek-v4-pro |
 
 ### 3.2 Decisões em que a IA ajudou - e onde eu discordei dela
 
@@ -92,6 +93,13 @@ Demonstre isso com artefatos como:
 - **Fase 4 — `×` vs `x` no ruff**: Docstrings com `maquina×timestamp` e `dia×turno` continham o caractere MULTIPLICATION SIGN (×) em vez da letra `x`. O ruff RUF002 rejeitou — corrigi trocando por `x`.
 - **Fase 4 — `planejada` string→bool no seed**: O CSV tem `planejada` como string (`true`/`false`), mas o modelo é `Boolean`. A IA tentou atribuir bool a `dict[str, str]` e o mypy rejeitou. Corrigi reconstruindo os dicts com tipos corretos via list comprehension.
 - **Fase 4 — `E501` na migração autogerada**: A migração autogerada pelo Alembic tinha linhas de 106-112 caracteres. O ruff format reformatou automaticamente com quebras apropriadas. Lição: sempre rodar `ruff format` após `alembic revision --autogenerate`.
+- **Fase 5 — D1 (aiomqtt para consumidor)**: A IA propôs aiomqtt (async) para o consumidor, mantendo paho-mqtt (sync) para o simulador. Concordei — o consumidor é um subscriber de longa duração e o modelo async evita threads bloqueadas.
+- **Fase 5 — D2 (content hash para dedup)**: A IA propôs SHA-256 dos campos relevantes com UNIQUE constraint para eventos sem PK natural. Concordei — a duplicata do fixture é corretamente detectada.
+- **Fase 5 — D4 (dead-letter como NDJSON)**: Eu pedi dead-letter como arquivo NDJSON em disco. A IA implementou com append atômico e volume no container.
+- **Fase 5 — D5 (ordenação com buffer)**: A IA propôs buffer em memória por máquina com janela de 30s. Implementação adiada (TODO) — o foco foi dedup e persistência primeiro.
+- **Fase 5 — D8 (ADR-004)**: A IA notou que ADR-003 já estava tomado pela Fase 4 e propôs ADR-004 por ordem cronológica. Concordei.
+- **Fase 5 — Containerização**: Eu pedi Dockerfile + compose service. A IA implementou com entrada parametrizável, healthcheck via depends_on, e volume para dead-letter.
+- **Fase 5 — `content_hash` contaminava o próprio cálculo**: A IA detectou que o hash era recalculado incluindo o `content_hash` da chamada anterior (mutação do dict). Corrigiu copiando o dict e adicionando `content_hash` à lista de exclusão.
 
 ### 3.4 Como otimizei o repositório para IA
 
