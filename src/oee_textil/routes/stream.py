@@ -75,9 +75,9 @@ async def _gerar_eventos(request: Request) -> AsyncGenerator[str]:
                     }
                 )
 
-            # OEE on-the-fly: ultimos 30 dias para capturar dados dos fixtures
+            # OEE on-the-fly: range aberto (2020-hoje) para capturar todos os dados
+            inicio = datetime.datetime(2020, 1, 1, tzinfo=datetime.UTC)
             fim = datetime.datetime.now(datetime.UTC)
-            inicio = fim - datetime.timedelta(days=30)
 
             oee_list = []
             for m in maquinas:
