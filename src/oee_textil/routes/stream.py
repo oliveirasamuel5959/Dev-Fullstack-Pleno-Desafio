@@ -75,26 +75,9 @@ async def _gerar_eventos(request: Request) -> AsyncGenerator[str]:
                     }
                 )
 
-            # OEE on-the-fly para cada maquina (turno atual)
-            agora = datetime.datetime.now(datetime.UTC)
-            hora = agora.hour
-            if 6 <= hora < 14:
-                inicio = agora.replace(hour=6, minute=0, second=0, microsecond=0)
-                fim = agora.replace(hour=14, minute=0, second=0, microsecond=0)
-            elif 14 <= hora < 22:
-                inicio = agora.replace(hour=14, minute=0, second=0, microsecond=0)
-                fim = agora.replace(hour=22, minute=0, second=0, microsecond=0)
-            elif hora >= 22:
-                inicio = agora.replace(hour=22, minute=0, second=0, microsecond=0)
-                fim = inicio + datetime.timedelta(hours=8)
-            else:
-                inicio = (agora - datetime.timedelta(days=1)).replace(
-                    hour=22,
-                    minute=0,
-                    second=0,
-                    microsecond=0,
-                )
-                fim = inicio + datetime.timedelta(hours=8)
+            # OEE on-the-fly: ultimos 30 dias para capturar dados dos fixtures
+            fim = datetime.datetime.now(datetime.UTC)
+            inicio = fim - datetime.timedelta(days=30)
 
             oee_list = []
             for m in maquinas:
