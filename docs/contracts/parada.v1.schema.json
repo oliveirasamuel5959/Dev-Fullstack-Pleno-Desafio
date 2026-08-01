@@ -1,0 +1,44 @@
+{
+  "description": "Evento de parada com motivo (topico: .../parada).",
+  "properties": {
+    "schema": {
+      "const": "parada.v1",
+      "title": "Schema",
+      "type": "string"
+    },
+    "maquina_id": {
+      "title": "Maquina Id",
+      "type": "string"
+    },
+    "ts_sensor": {
+      "format": "date-time",
+      "title": "Ts Sensor",
+      "type": "string"
+    },
+    "motivo_codigo": {
+      "description": "Codigo do motivo, ex: QBR_AGULHA",
+      "title": "Motivo Codigo",
+      "type": "string"
+    },
+    "motivo_descricao": {
+      "description": "Descricao legivel do motivo",
+      "title": "Motivo Descricao",
+      "type": "string"
+    },
+    "planejada": {
+      "description": "True = parada planejada (desconta do tempo planejado)",
+      "title": "Planejada",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema",
+    "maquina_id",
+    "ts_sensor",
+    "motivo_codigo",
+    "motivo_descricao",
+    "planejada"
+  ],
+  "title": "ParadaV1",
+  "type": "object"
+}

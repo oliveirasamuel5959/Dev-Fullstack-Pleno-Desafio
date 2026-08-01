@@ -1,0 +1,53 @@
+{
+  "description": "Metricas continuas de maquina (topico: .../telemetria).",
+  "properties": {
+    "schema": {
+      "const": "telemetria.v1",
+      "title": "Schema",
+      "type": "string"
+    },
+    "maquina_id": {
+      "title": "Maquina Id",
+      "type": "string"
+    },
+    "ts_sensor": {
+      "format": "date-time",
+      "title": "Ts Sensor",
+      "type": "string"
+    },
+    "rpm": {
+      "description": "Rotacoes por minuto; 0 = maquina parada",
+      "minimum": 0,
+      "title": "Rpm",
+      "type": "number"
+    },
+    "voltas_acumuladas": {
+      "description": "Contador absoluto de voltas",
+      "minimum": 0,
+      "title": "Voltas Acumuladas",
+      "type": "integer"
+    },
+    "temperatura_c": {
+      "description": "Temperatura em graus Celsius",
+      "title": "Temperatura C",
+      "type": "number"
+    },
+    "vibracao_mm_s": {
+      "description": "Vibracao em mm/s",
+      "minimum": 0,
+      "title": "Vibracao Mm S",
+      "type": "number"
+    }
+  },
+  "required": [
+    "schema",
+    "maquina_id",
+    "ts_sensor",
+    "rpm",
+    "voltas_acumuladas",
+    "temperatura_c",
+    "vibracao_mm_s"
+  ],
+  "title": "TelemetriaV1",
+  "type": "object"
+}

@@ -1,0 +1,44 @@
+{
+  "description": "Contagem de producao e refugo (topico: .../producao).",
+  "properties": {
+    "schema": {
+      "const": "producao.v1",
+      "title": "Schema",
+      "type": "string"
+    },
+    "maquina_id": {
+      "title": "Maquina Id",
+      "type": "string"
+    },
+    "ts_sensor": {
+      "format": "date-time",
+      "title": "Ts Sensor",
+      "type": "string"
+    },
+    "unidades_produzidas": {
+      "minimum": 0,
+      "title": "Unidades Produzidas",
+      "type": "integer"
+    },
+    "unidades_refugo": {
+      "minimum": 0,
+      "title": "Unidades Refugo",
+      "type": "integer"
+    },
+    "ordem_producao": {
+      "description": "Identificador da ordem de producao",
+      "title": "Ordem Producao",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "maquina_id",
+    "ts_sensor",
+    "unidades_produzidas",
+    "unidades_refugo",
+    "ordem_producao"
+  ],
+  "title": "ProducaoV1",
+  "type": "object"
+}

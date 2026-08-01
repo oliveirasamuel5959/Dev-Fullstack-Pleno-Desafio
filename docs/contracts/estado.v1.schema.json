@@ -1,0 +1,48 @@
+{
+  "description": "Evento de mudanca de estado da maquina (topico: .../estado).",
+  "properties": {
+    "schema": {
+      "const": "estado.v1",
+      "title": "Schema",
+      "type": "string"
+    },
+    "maquina_id": {
+      "title": "Maquina Id",
+      "type": "string"
+    },
+    "ts_sensor": {
+      "format": "date-time",
+      "title": "Ts Sensor",
+      "type": "string"
+    },
+    "estado": {
+      "enum": [
+        "rodando",
+        "parado",
+        "setup",
+        "manutencao"
+      ],
+      "title": "Estado",
+      "type": "string"
+    },
+    "estado_anterior": {
+      "enum": [
+        "rodando",
+        "parado",
+        "setup",
+        "manutencao"
+      ],
+      "title": "Estado Anterior",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "maquina_id",
+    "ts_sensor",
+    "estado",
+    "estado_anterior"
+  ],
+  "title": "EstadoV1",
+  "type": "object"
+}
