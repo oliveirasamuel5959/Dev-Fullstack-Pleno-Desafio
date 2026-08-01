@@ -5,30 +5,34 @@ GET /api/v1/stream — Server-Sent Events a cada 2s.
 
 import asyncio
 import json
-from typing import Any
+from collections.abc import AsyncGenerator
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func
 
+from oee_textil.core.database import SessionLocal
 from oee_textil.models.estado import EstadoMaquina
 from oee_textil.models.maquina import Maquina
 from oee_textil.models.oee_agregado import OeeAgregado
-from oee_textil.routes.app import get_db
 
 router = APIRouter(prefix="/api/v1", tags=["Stream"])
 
 
-async def _gerar_eventos(db: Any, request: Request) -> Any:
-    """Generator SSE: envia estado + OEE a cada 2s."""
+async def _gerar_eventos(request: Request) -> AsyncGenerator[str]:
+    """Generator SSE: envia estado + OEE a cada 2s.
+
+    Cria sessao DB fresca a cada iteracao para evitar cache stale.
+    """
     while True:
         if await request.is_disconnected():
             break
 
+        session = SessionLocal()
         try:
             # Ultimo estado de cada maquina
             subq = (
-                db.query(
+                session.query(
                     EstadoMaquina.maquina_id,
                     func.max(EstadoMaquina.ts_sensor).label("max_ts"),
                 )
@@ -37,7 +41,7 @@ async def _gerar_eventos(db: Any, request: Request) -> Any:
             )
 
             estados = (
-                db.query(
+                session.query(
                     Maquina.maquina_id,
                     Maquina.galpao,
                     Maquina.linha,
@@ -55,7 +59,7 @@ async def _gerar_eventos(db: Any, request: Request) -> Any:
 
             # Ultimo OEE agregado
             oee_rows = (
-                db.query(OeeAgregado)
+                session.query(OeeAgregado)
                 .order_by(OeeAgregado.ts_calculo.desc())
                 .limit(4)
                 .all()
@@ -87,15 +91,17 @@ async def _gerar_eventos(db: Any, request: Request) -> Any:
             yield f"data: {json.dumps(data)}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'erro': str(e)})}\n\n"
+        finally:
+            session.close()
 
         await asyncio.sleep(2)
 
 
 @router.get("/stream")
-async def stream(request: Request, db: Any = Depends(get_db)) -> StreamingResponse:
+async def stream(request: Request) -> StreamingResponse:
     """SSE: estado das maquinas + OEE em tempo real (2s)."""
     return StreamingResponse(
-        _gerar_eventos(db, request),
+        _gerar_eventos(request),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
