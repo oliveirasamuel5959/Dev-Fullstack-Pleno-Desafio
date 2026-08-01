@@ -49,6 +49,7 @@ Demonstre isso com artefatos como:
 | Claude Code (CLI) | Implementação completa da Fase 1: modelos Pydantic (4 schemas + union), JSON Schema export, contract tests, ADR-002 | deepseek-v4-pro |
 | Claude Code (CLI) | Especificação e implementação completa da Fase 2: docker-compose (mosquitto + timescaledb), smoke tests de conectividade, Makefile | deepseek-v4-pro |
 | Claude Code (CLI) | Especificação e implementação completa da Fase 3: simulador MQTT (CLI argparse), leitor de NDJSON/CSV, publicador na topologia fabrica/... | deepseek-v4-pro |
+| Claude Code (CLI) | Especificação e implementação completa da Fase 4: modelos SQLAlchemy (7 tabelas), Alembic + migração com hypertable, seed idempotente, ADR-003 | deepseek-v4-pro |
 
 ### 3.2 Decisões em que a IA ajudou - e onde eu discordei dela
 
@@ -64,6 +65,11 @@ Demonstre isso com artefatos como:
 - **Fase 3 — D2 (maquinas.csv como roteamento)**: A IA propôs ler `maquinas.csv` apenas como tabela interna de roteamento (`maquina_id → galpão, linha`), sem publicá-lo como mensagem. Concordei — os dados de catálogo pertencem ao modelo de dados (Fase 4), não ao simulador.
 - **Fase 3 — D3 (intervalo fixo + speed multiplier)**: A IA propôs `--interval` com `--speed` como multiplicador, evitando o modo "real-time por timestamps". Concordei — mais simples, previsível, e não depende de timestamps corretos nos fixtures.
 - **Fase 3 — D4 (QoS 1 padrão)**: A IA propôs QoS 1 (at least once) para todas as mensagens, exercitando a idempotência que o consumidor (Fase 5) precisará tratar. Concordei — alinhado com o eixo de avaliação Event-Driven & MQTT.
+- **Fase 4 — D2 (Hypertable com PK natural)**: A IA propôs PK composta `(maquina_id, ts_sensor)` para `telemetria`, usando a chave natural de dedup como coluna de particionamento. Concordei — cobre consultas por máquina×janela sem índice extra e atende à exigência do TimescaleDB.
+- **Fase 4 — D4 (Denormalização de parada)**: A IA propôs armazenar `motivo_descricao` e `planejada` duplicados em `parada` além da FK. Concordei — preserva a verdade histórica do evento se o catálogo mudar.
+- **Fase 4 — D5 (Sem CHECK constraint em estado)**: A IA propôs validar literais de estado apenas na borda (Pydantic), sem constraint no banco. Concordei — evolução aditiva de schema não pode exigir migração.
+- **Fase 4 — D7 (Sem agregações agora)**: A IA propôs adiar `oee_agregado` para a Fase 6. Concordei — a estrutura depende das funções de cálculo que ainda não existem.
+- **Fase 4 — `.env` e `.env.example`**: Eu pedi para consolidar variáveis sensíveis em `.env` com template versionado. A IA criou ambos e implementou loader manual de ~15 linhas sem dependências novas.
 
 ### 3.3 O que eu revisei/corrigi no que a IA gerou
 
@@ -79,6 +85,13 @@ Demonstre isso com artefatos como:
 - **Fase 3 — `TypeAdapter` retorna `Any`**: O `MensagemMQTT.validate_python()` da Fase 1 retorna `Any`, então `msg.maquina_id` não tem tipo conhecido pelo mypy. A IA primeiro tentou `# type: ignore[attr-defined]` (que mypy marcou como unused), depois removeu o ignore completamente — mypy aceitou porque os atributos existem em todos os tipos da union. Funcionou, mas a anotação explícita com cast seria mais segura.
 - **Fase 3 — `CallbackAPIVersion` não exportado**: O mypy reclamou que `paho.mqtt.client` não exporta explicitamente `CallbackAPIVersion`. A IA adicionou `# type: ignore[attr-defined]` no `cli.py` — correto, é uma limitação dos stubs do paho-mqtt.
 - **Fase 3 — `test_entry_point_executa` da Fase 0 não quebrou**: A IA notou que o `__main__.py` do simulador (`python -m oee_textil.simulador`) é diferente do entry point principal (`python -m oee_textil`). O teste da Fase 0 continuou passando sem alterações — bom sinal de isolamento entre fases.
+- **Fase 4 — Modelos não registrados no metadata**: A IA criou os 7 modelos mas esqueceu de importá-los em `models/__init__.py` e no teste — `Base.metadata.tables` ficou vazio. Corrigi adicionando os imports com `# noqa: F401` em ambos os lugares.
+- **Fase 4 — `ForeignKey` ausente nos modelos**: A IA definiu `maquina_id` como `String(50)` sem `ForeignKey("maquinas.maquina_id")`. O Alembic autogenerate detectou as FKs porque eu as adicionei depois — sem elas, as relações entre tabelas não existiriam.
+- **Fase 4 — `Index` ausente nos modelos**: A IA esqueceu de adicionar `Index()` nos modelos (`estado_maquina`, `parada`, `producao`). Corrigi adicionando `__table_args__` com os índices esperados.
+- **Fase 4 — `create_hypertable` vs transação**: A IA adicionou corretamente `op.get_context().autocommit_block()` para a criação da hypertable, mas o comando SQL usava `by_range` com `if_not_exists => TRUE`. Funcionou na primeira tentativa.
+- **Fase 4 — `×` vs `x` no ruff**: Docstrings com `maquina×timestamp` e `dia×turno` continham o caractere MULTIPLICATION SIGN (×) em vez da letra `x`. O ruff RUF002 rejeitou — corrigi trocando por `x`.
+- **Fase 4 — `planejada` string→bool no seed**: O CSV tem `planejada` como string (`true`/`false`), mas o modelo é `Boolean`. A IA tentou atribuir bool a `dict[str, str]` e o mypy rejeitou. Corrigi reconstruindo os dicts com tipos corretos via list comprehension.
+- **Fase 4 — `E501` na migração autogerada**: A migração autogerada pelo Alembic tinha linhas de 106-112 caracteres. O ruff format reformatou automaticamente com quebras apropriadas. Lição: sempre rodar `ruff format` após `alembic revision --autogenerate`.
 
 ### 3.4 Como otimizei o repositório para IA
 
