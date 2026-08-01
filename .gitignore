@@ -91,8 +91,6 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-uv.lock
-
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -110,6 +108,4 @@ uv.lock
 
 .claude/settings.local.json
 .prompts
-
-*.conf
 
