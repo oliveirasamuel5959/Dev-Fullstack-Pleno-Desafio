@@ -13,6 +13,8 @@ import os
 from pathlib import Path
 
 DEFAULT_DATABASE_URL = "postgresql://oee:oee_dev@localhost:5432/oee_textil"
+DEFAULT_MQTT_BROKER_HOST = "localhost"
+DEFAULT_MQTT_BROKER_PORT = 1883
 
 
 def _repo_root() -> Path:
@@ -65,6 +67,27 @@ def get_database_url() -> str:
     2. Fallback para o default de desenvolvimento local (docker compose)
     """
     return os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
+
+
+def get_mqtt_broker_host() -> str:
+    """Retorna o host do broker MQTT.
+
+    Prioridade:
+    1. Variavel de ambiente MQTT_BROKER_HOST
+    2. Fallback para localhost (docker compose)
+    """
+    return os.environ.get("MQTT_BROKER_HOST", DEFAULT_MQTT_BROKER_HOST)
+
+
+def get_mqtt_broker_port() -> int:
+    """Retorna a porta do broker MQTT.
+
+    Prioridade:
+    1. Variavel de ambiente MQTT_BROKER_PORT
+    2. Fallback para 1883 (padrao MQTT)
+    """
+    port = os.environ.get("MQTT_BROKER_PORT", str(DEFAULT_MQTT_BROKER_PORT))
+    return int(port)
 
 
 # Carregar .env no import do modulo (side effect documentado).

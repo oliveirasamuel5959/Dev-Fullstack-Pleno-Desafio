@@ -2,7 +2,15 @@
 
 import os
 
-from oee_textil.core.config import DEFAULT_DATABASE_URL, carregar_env, get_database_url
+from oee_textil.core.config import (
+    DEFAULT_DATABASE_URL,
+    DEFAULT_MQTT_BROKER_HOST,
+    DEFAULT_MQTT_BROKER_PORT,
+    carregar_env,
+    get_database_url,
+    get_mqtt_broker_host,
+    get_mqtt_broker_port,
+)
 
 
 def test_default_url_sem_env(monkeypatch):
@@ -91,3 +99,30 @@ def test_carregar_env_valor_com_aspas(tmp_path, monkeypatch):
     carregar_env(env_file)
 
     assert os.environ["DATABASE_URL"] == "postgresql://quoted@localhost/db"
+
+
+# --- MQTT config (Fase 5) ---
+
+
+def test_mqtt_broker_host_default(monkeypatch):
+    """Sem MQTT_BROKER_HOST no ambiente, retorna localhost."""
+    monkeypatch.delenv("MQTT_BROKER_HOST", raising=False)
+    assert get_mqtt_broker_host() == DEFAULT_MQTT_BROKER_HOST
+
+
+def test_mqtt_broker_host_env(monkeypatch):
+    """MQTT_BROKER_HOST no ambiente prevalece."""
+    monkeypatch.setenv("MQTT_BROKER_HOST", "broker.local")
+    assert get_mqtt_broker_host() == "broker.local"
+
+
+def test_mqtt_broker_port_default(monkeypatch):
+    """Sem MQTT_BROKER_PORT no ambiente, retorna 1883."""
+    monkeypatch.delenv("MQTT_BROKER_PORT", raising=False)
+    assert get_mqtt_broker_port() == DEFAULT_MQTT_BROKER_PORT
+
+
+def test_mqtt_broker_port_env(monkeypatch):
+    """MQTT_BROKER_PORT no ambiente prevalece."""
+    monkeypatch.setenv("MQTT_BROKER_PORT", "8883")
+    assert get_mqtt_broker_port() == 8883
