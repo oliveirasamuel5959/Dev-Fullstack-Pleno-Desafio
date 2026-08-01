@@ -120,6 +120,17 @@ def test_maquina_tem_tempo_ciclo():
     )
 
 
+def test_content_hash_colunas():
+    """EstadoMaquina, Parada e Producao devem ter coluna content_hash."""
+    for nome_tabela in ["estado_maquina", "parada", "producao"]:
+        tabela = Base.metadata.tables[nome_tabela]
+        assert "content_hash" in tabela.columns, (
+            f"{nome_tabela} nao tem coluna content_hash"
+        )
+        col = tabela.columns["content_hash"]
+        assert col.unique is True, f"{nome_tabela}.content_hash deve ser UNIQUE"
+
+
 def test_modelos_importaveis():
     """Todos os modelos devem ser importaveis do pacote models."""
     from oee_textil.models import (

@@ -14,7 +14,15 @@ from __future__ import annotations
 import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Identity, Index, Integer, String, func
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    Identity,
+    Index,
+    Integer,
+    String,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from oee_textil.core.database import Base
@@ -45,6 +53,11 @@ class EstadoMaquina(Base):
     ts_ingestao: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
+    )
+    content_hash: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        unique=True,
     )
 
     __table_args__ = (Index("ix_estado_maquina_maquina_ts", "maquina_id", "ts_sensor"),)
