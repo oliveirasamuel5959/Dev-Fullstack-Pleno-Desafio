@@ -153,44 +153,51 @@ def inserir_evento(
 # --- Consumidor principal ---
 
 
-async def processar_mensagem(
+def processar_mensagem(
     topico: str,
     payload_str: str,
 ) -> None:
     """Pipeline completo de uma mensagem MQTT."""
-    # 1. Parse JSON
     try:
-        payload = json.loads(payload_str)
-    except json.JSONDecodeError as e:
-        dead_letter(
-            {"raw": payload_str},
-            f"JSON invalido: {e}",
-            topico,
-        )
-        return
+        # 1. Parse JSON
+        try:
+            payload = json.loads(payload_str)
+        except json.JSONDecodeError as e:
+            dead_letter(
+                {"raw": payload_str},
+                f"JSON invalido: {e}",
+                topico,
+            )
+            return
 
-    # 2. Validar schema (Pydantic)
-    try:
-        msg = MensagemMQTT.validate_python(payload)
+        # 2. Validar schema (Pydantic)
+        try:
+            msg = MensagemMQTT.validate_python(payload)
+        except Exception as e:
+            dead_letter(payload, f"Validacao schema: {e}", topico)
+            return
+
+        # 3. Extrair dados como dict e remover campos extras
+        dados = msg.model_dump()
+        schema = dados.pop("schema", "")
+        dados.pop("model_config", None)
+
+        # 4. Resolver tabela e inserir
+        try:
+            modelo = resolver_tabela(schema)
+        except ValueError as e:
+            dead_letter(payload, str(e), topico)
+            return
+
+        if modelo is Telemetria:
+            ok = inserir_telemetria(dados)
+        else:
+            ok = inserir_evento(modelo, dados)
+
+        if not ok:
+            print(f"  [DEDUP] duplicata ignorada — {schema}", flush=True)
     except Exception as e:
-        dead_letter(payload, f"Validacao schema: {e}", topico)
-        return
-
-    # 3. Extrair dados como dict
-    dados = msg.model_dump()
-
-    # 4. Resolver tabela e inserir
-    schema = dados.get("schema", "")
-    try:
-        modelo = resolver_tabela(schema)
-    except ValueError as e:
-        dead_letter(payload, str(e), topico)
-        return
-
-    if modelo is Telemetria:
-        inserir_telemetria(dados)
-    else:
-        inserir_evento(modelo, dados)
+        print(f"  [ERRO] falha ao processar: {e}", file=sys.stderr, flush=True)
 
 
 async def main() -> None:
@@ -228,7 +235,7 @@ async def main() -> None:
                 topico = str(message.topic.value)
                 payload_str = message.payload.decode()
                 print(f"[{topico}] {payload_str[:80]}...")
-                await processar_mensagem(topico, payload_str)
+                processar_mensagem(topico, payload_str)
     except aiomqtt.MqttError as e:
         print(f"[CONSUMIDOR] Erro MQTT: {e}", file=sys.stderr)
         sys.exit(1)

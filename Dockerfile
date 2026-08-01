@@ -25,14 +25,16 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 # Copiar manifestos de dependencia primeiro (cache layer)
 COPY pyproject.toml uv.lock README.md ./
 
-# Instalar dependencias Python
-RUN uv sync --frozen --no-dev
-
-# Copiar codigo fonte
+# Copiar codigo fonte (precisa vir antes do sync para instalar o projeto)
 COPY src/ src/
 COPY data/ data/
 COPY migrations/ migrations/
 COPY alembic.ini ./
 
+# Instalar dependencias Python + projeto como editavel
+RUN uv sync --frozen --no-dev
+
 # Entry point padrao: consumidor
-CMD ["uv", "run", "python", "-m", "oee_textil.services.consumidor"]
+# -u = unbuffered stdout/stderr (necessario para logs no Docker)
+ENV PYTHONUNBUFFERED=1
+CMD ["/app/.venv/bin/python", "-u", "-m", "oee_textil.services.consumidor"]

@@ -2,6 +2,7 @@
 fabrica/{galpao}/{linha}/{maquina}/{tipo}.
 """
 
+import json
 import sys
 import time
 from typing import Any
@@ -77,9 +78,8 @@ def publicar_mensagens(
 
         topico = _construir_topico(schema, catalogo, maquina_id)
 
-        # Publicar com QoS 1
-        payload = dados  # reutiliza o dict original (ja validado)
-        cliente.publish(topico, str(payload), qos=1)
+        # Publicar com QoS 1 (serializar como JSON, nao Python repr)
+        cliente.publish(topico, json.dumps(dados, default=str), qos=1)
 
         print(f"[{topico}] {schema} — {maquina_id} @ {ts}")
 
