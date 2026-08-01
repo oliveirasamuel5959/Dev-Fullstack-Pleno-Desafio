@@ -47,3 +47,6 @@ packages = ["oee_textil"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+    "smoke: conectividade com infraestrutura externa (Mosquitto, TimescaleDB)",
+]
