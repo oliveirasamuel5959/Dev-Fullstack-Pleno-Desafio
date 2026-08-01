@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OEE Têxtil — Malharia Contínua S.A.</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh;padding:1rem}
+header{text-align:center;padding:1rem 0 1.5rem}
+header h1{font-size:1.5rem;font-weight:600;color:#fff}
+header p{font-size:.85rem;color:#888;margin-top:.25rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem;max-width:1400px;margin:0 auto}
+.card{background:#16213e;border-radius:10px;padding:1.25rem;border:1px solid #2a2a4a}
+.card h2{font-size:.95rem;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.75rem}
+.oee-big{font-size:3rem;font-weight:700;color:#4caf50;text-align:center;font-variant-numeric:tabular-nums}
+.oee-factors{display:flex;gap:.5rem;margin-top:.75rem}
+.oee-factor{flex:1;text-align:center}
+.oee-factor .label{font-size:.7rem;color:#888;text-transform:uppercase}
+.oee-factor .bar{height:6px;background:#2a2a4a;border-radius:3px;margin:.25rem 0;overflow:hidden}
+.oee-factor .fill{height:100%;border-radius:3px;transition:width .5s}
+.fill-d{background:#ff9800}.fill-p{background:#2196f3}.fill-q{background:#9c27b0}
+.oee-factor .val{font-size:1.1rem;font-weight:600}
+.status-row{display:flex;align-items:center;gap:.5rem;padding:.4rem 0;border-bottom:1px solid #2a2a4a;font-size:.85rem}
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot-rodando{background:#4caf50;box-shadow:0 0 6px #4caf50}
+.dot-parado{background:#f44336;box-shadow:0 0 6px #f44336}
+.dot-setup,.dot-manutencao{background:#ff9800;box-shadow:0 0 6px #ff9800}
+.status-machine{flex:1;font-weight:500}
+.status-type{color:#888;font-size:.75rem}
+.pareto-bar{margin:.3rem 0}
+.pareto-label{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:2px}
+.pareto-fill{height:18px;border-radius:3px;transition:width 1s;min-width:2px}
+.feed{max-height:200px;overflow-y:auto;font-size:.8rem}
+.feed-item{padding:.3rem 0;border-bottom:1px solid #2a2a4a;display:flex;gap:.5rem}
+.feed-time{color:#888;white-space:nowrap}
+.feed-machine{color:#64b5f6;font-weight:500}
+footer{text-align:center;padding:1.5rem;font-size:.75rem;color:#555}
+.status-ok{color:#4caf50}.status-err{color:#f44336}
+</style>
+</head>
+<body>
+<header>
+  <h1>OEE Têxtil</h1>
+  <p>Malharia Contínua S.A. — Dashboard Operacional <span id="conn-status" class="status-err">●</span></p>
+</header>
+<div class="grid">
+  <div class="card" id="card-oee">
+    <h2>OEE Atual</h2>
+    <div class="oee-big" id="oee-value">--</div>
+    <div class="oee-factors">
+      <div class="oee-factor"><div class="label">Disp</div><div class="bar"><div class="fill fill-d" id="bar-d" style="width:0%"></div></div><div class="val" id="val-d">-</div></div>
+      <div class="oee-factor"><div class="label">Perf</div><div class="bar"><div class="fill fill-p" id="bar-p" style="width:0%"></div></div><div class="val" id="val-p">-</div></div>
+      <div class="oee-factor"><div class="label">Qual</div><div class="bar"><div class="fill fill-q" id="bar-q" style="width:0%"></div></div><div class="val" id="val-q">-</div></div>
+    </div>
+  </div>
+  <div class="card" id="card-estado">
+    <h2>Estado das Maquinas</h2>
+    <div id="estado-list"></div>
+  </div>
+  <div class="card" id="card-pareto">
+    <h2>Pareto de Paradas</h2>
+    <div id="pareto-content"></div>
+  </div>
+  <div class="card" id="card-feed">
+    <h2>Feed de Eventos</h2>
+    <div class="feed" id="feed-content"></div>
+  </div>
+</div>
+<footer>Walking Skeleton — Fase 8</footer>
+<script>
+const feed=[],MAX_FEED=20;
+
+function addFeed(icon,txt){
+  const now=new Date().toLocaleTimeString('pt-BR');
+  feed.unshift({time:now,txt:icon+' '+txt});
+  if(feed.length>MAX_FEED)feed.pop();
+  document.getElementById('feed-content').innerHTML=feed.map(f=>
+    `<div class="feed-item"><span class="feed-time">${f.time}</span><span>${f.txt}</span></div>`
+  ).join('');
+}
+
+function updateEstado(estados){
+  const list=document.getElementById('estado-list');
+  if(!estados.length){list.innerHTML='<div style="color:#888">Sem dados</div>';return;}
+  list.innerHTML=estados.map(e=>{
+    const dotClass='dot-'+e.estado;
+    const statusLabel=e.estado.charAt(0).toUpperCase()+e.estado.slice(1);
+    return `<div class="status-row">
+      <span class="status-dot ${dotClass}"></span>
+      <span class="status-machine">${e.maquina_id}</span>
+      <span class="status-type">${e.tipo} — ${statusLabel}</span>
+    </div>`;
+  }).join('');
+}
+
+function updateOEE(oeeData){
+  if(!oeeData.length){
+    document.getElementById('oee-value').textContent='--';
+    return;
+  }
+  const avg=oeeData.reduce((s,o)=>s+o.oee,0)/oeeData.length;
+  const el=document.getElementById('oee-value');
+  el.textContent=(avg*100).toFixed(1)+'%';
+  el.style.color=avg>=0.75?'#4caf50':avg>=0.5?'#ff9800':'#f44336';
+
+  const dAvg=oeeData.reduce((s,o)=>s+o.disponibilidade,0)/oeeData.length;
+  const pAvg=oeeData.reduce((s,o)=>s+o.performance,0)/oeeData.length;
+  const qAvg=oeeData.reduce((s,o)=>s+o.qualidade,0)/oeeData.length;
+
+  document.getElementById('bar-d').style.width=(dAvg*100)+'%';
+  document.getElementById('val-d').textContent=(dAvg*100).toFixed(1)+'%';
+  document.getElementById('bar-p').style.width=(pAvg*100)+'%';
+  document.getElementById('val-p').textContent=(pAvg*100).toFixed(1)+'%';
+  document.getElementById('bar-q').style.width=(qAvg*100)+'%';
+  document.getElementById('val-q').textContent=(qAvg*100).toFixed(1)+'%';
+}
+
+async function loadPareto(){
+  try{
+    const r=await fetch('/api/v1/paradas/pareto');
+    const data=await r.json();
+    if(!data.items.length){
+      document.getElementById('pareto-content').innerHTML='<div style="color:#888">Sem paradas no periodo</div>';
+      return;
+    }
+    const max=data.items[0].ocorrencias;
+    document.getElementById('pareto-content').innerHTML=data.items.slice(0,7).map(p=>{
+      const pct=(p.ocorrencias/max*100).toFixed(0);
+      const color=p.planejada?'#ff9800':'#f44336';
+      return `<div class="pareto-bar">
+        <div class="pareto-label"><span>${p.motivo_descricao}</span><span>${p.ocorrencias}</span></div>
+        <div class="pareto-fill" style="width:${pct}%;background:${color}"></div>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+function connectSSE(){
+  const sse=new EventSource('/api/v1/stream');
+  sse.onopen=()=>{
+    document.getElementById('conn-status').className='status-ok';
+    addFeed('🟢','SSE conectado');
+  };
+  sse.onerror=()=>{
+    document.getElementById('conn-status').className='status-err';
+  };
+  sse.onmessage=e=>{
+    try{
+      const data=JSON.parse(e.data);
+      if(data.erro){addFeed('⚠️',data.erro);return;}
+      if(data.estados){
+        updateEstado(data.estados);
+        const estadosAnteriores=window._lastEstados||'';
+        const estadosAtuais=JSON.stringify(data.estados.map(e=>e.maquina_id+':'+e.estado));
+        if(estadosAnteriores!==estadosAtuais&&estadosAnteriores!==''){
+          data.estados.forEach(e=>{
+            const prev=window._lastData?.find(p=>p.maquina_id===e.maquina_id);
+            if(prev&&prev.estado!==e.estado){
+              addFeed('🔵',`${e.maquina_id}: ${prev.estado} → ${e.estado}`);
+            }
+          });
+        }
+        window._lastEstados=estadosAtuais;
+        window._lastData=data.estados;
+      }
+      if(data.oee)updateOEE(data.oee);
+    }catch(ex){}
+  };
+  return sse;
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  loadPareto();
+  const sse=connectSSE();
+  window.addEventListener('beforeunload',()=>sse.close());
+});
+</script>
+</body>
+</html>

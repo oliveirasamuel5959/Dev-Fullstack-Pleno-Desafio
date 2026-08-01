@@ -6,10 +6,12 @@ OpenAPI: /docs (Swagger) e /redoc (ReDoc)
 
 from collections.abc import AsyncIterator, Generator
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from oee_textil.core.database import SessionLocal
 
@@ -52,11 +54,18 @@ from oee_textil.routes.estado import router as estado_router  # noqa: E402
 from oee_textil.routes.oee import router as oee_router  # noqa: E402
 from oee_textil.routes.paradas import router as paradas_router  # noqa: E402
 from oee_textil.routes.perdas import router as perdas_router  # noqa: E402
+from oee_textil.routes.stream import router as stream_router  # noqa: E402
 
 app.include_router(oee_router)
 app.include_router(paradas_router)
 app.include_router(estado_router)
 app.include_router(perdas_router)
+app.include_router(stream_router)
+
+# Dashboard estatico (Fase 8)
+static_dir = Path(__file__).resolve().parent.parent / "static"
+if static_dir.exists():
+    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
 
 
 @app.get("/health")
