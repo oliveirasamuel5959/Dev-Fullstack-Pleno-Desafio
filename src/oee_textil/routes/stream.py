@@ -75,9 +75,17 @@ async def _gerar_eventos(request: Request) -> AsyncGenerator[str]:
                     }
                 )
 
-            # OEE on-the-fly: range aberto (2020-hoje) para capturar todos os dados
-            inicio = datetime.datetime(2020, 1, 1, tzinfo=datetime.UTC)
-            fim = datetime.datetime.now(datetime.UTC)
+            # OEE: usa o range real dos dados de producao ou fallback 8h
+            from oee_textil.models.producao import Producao
+
+            ts_min = session.query(func.min(Producao.ts_sensor)).scalar()
+            ts_max = session.query(func.max(Producao.ts_sensor)).scalar()
+            if ts_min and ts_max:
+                inicio = ts_min
+                fim = ts_max + datetime.timedelta(hours=1)
+            else:
+                fim = datetime.datetime.now(datetime.UTC)
+                inicio = fim - datetime.timedelta(hours=8)
 
             oee_list = []
             for m in maquinas:
