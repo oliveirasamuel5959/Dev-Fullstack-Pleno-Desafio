@@ -47,6 +47,7 @@ Demonstre isso com artefatos como:
 | Claude Code (CLI) | Especificação e implementação completa da Fase 0: configuração do harness (ruff, mypy, pytest), layout `src/oee_textil/`, ADR-001, pre-commit, smoke test | deepseek-v4-pro (via API compatível) |
 | Claude Code (CLI) | Geração dos arquivos de spec (`plan.md`, `requirements.md`, `validation.md`) e documentação da Fase 0 | deepseek-v4-pro |
 | Claude Code (CLI) | Implementação completa da Fase 1: modelos Pydantic (4 schemas + union), JSON Schema export, contract tests, ADR-002 | deepseek-v4-pro |
+| Claude Code (CLI) | Especificação e implementação completa da Fase 2: docker-compose (mosquitto + timescaledb), smoke tests de conectividade, Makefile | deepseek-v4-pro |
 
 ### 3.2 Decisões em que a IA ajudou - e onde eu discordei dela
 
@@ -55,6 +56,9 @@ Demonstre isso com artefatos como:
 - **Fase 0 — backfill do validation.md**: A IA notou que `validation.md` estava referenciado mas não existia. Concordei em criá-lo antes de abrir a Fase 1, seguindo a regra do roadmap ("uma fase por vez").
 - **Fase 1 — D1 (Pydantic + discriminated union)**: A IA propôs usar `Annotated[Union[...], Field(discriminator="schema")]` com `TypeAdapter` do Pydantic v2. Concordei — resolve o despacho sem if/elif manual.
 - **Fase 1 — D3 (contract test valida todas as linhas)**: A IA propôs que os defeitos intencionais (`rpm=0`, duplicata, fora de ordem) são schema-valid e não devem ser rejeitados. Concordei — o tratamento é responsabilidade do consumidor (Fase 5), não dos schemas.
+- **Fase 2 — D1 (Mosquitto anônimo)**: A IA propôs Mosquitto sem autenticação/persistência para o ambiente de dev, com a justificativa de que o walking skeleton não precisa de segurança de produção. Concordei — adicionar auth agora seria complexidade sem ganho na avaliação.
+- **Fase 2 — D3 (Smoke test programático)**: A IA propôs ir além do critério mínimo do roadmap (`docker compose ps` healthy) e adicionar smoke tests em pytest com conexão real. Concordei — demonstra que a infra não apenas "subiu" mas está funcionalmente acessível a partir do código Python.
+- **Fase 2 — D4 (Makefile)**: Eu pedi para adicionar Makefile como entry point unificado. A IA incorporou com targets help/up/down/ps/logs/test-smoke/test/lint/clean, usando `-m smoke` (pytest marker) em vez de `-k smoke` (substring match) para maior precisão. Concordei com a abordagem.
 
 ### 3.3 O que eu revisei/corrigi no que a IA gerou
 
@@ -64,6 +68,9 @@ Demonstre isso com artefatos como:
 - **Fase 1 — `Annotated[Union]` não é instanciável**: A IA usou `Annotated[Union[...], Field(discriminator="schema")]` como tipo diretamente instanciável via `MensagemMQTT(**data)`. Em Python 3.14 + Pydantic v2, `Annotated` não é callable — corrigi usando `TypeAdapter` com `validate_python()`.
 - **Fase 1 — Campo `schema` shadowing BaseModel**: A IA usou `schema` como nome de campo, que conflita com `BaseModel.model_json_schema()`. Corrigi com `model_config = {"protected_namespaces": ()}` e `# type: ignore[assignment]`.
 - **Fase 1 — E501 vs ruff format**: A descrição longa do campo `planejada` causou conflito entre E501 (linha longa) e ruff format (queria juntar a string). Corrigi encurtando a descrição.
+- **Fase 2 — `test_smoke.py` já existia**: A IA tentou sobrescrever `tests/test_smoke.py` (criado na Fase 0 com testes de importabilidade). Corrigi: mantive os testes existentes e adicionei os novos testes de infra com `@pytest.mark.smoke` no mesmo arquivo, separados por comentários de seção.
+- **Fase 2 — `-m smoke` vs `-k smoke`**: O plano original usava `-k smoke` no Makefile, mas isso capturaria os testes da Fase 0 por substring match no nome do arquivo. A IA ajustou para `-m smoke` (pytest marker), que seleciona apenas os testes explicitamente marcados — mais preciso.
+- **Fase 2 — pre-commit corrigiu formatação**: O ruff format ajustou formatação do `test_smoke.py` no commit (quebra de linha em chamada de função longa). Nada grave — o pre-commit hook funcionou como esperado.
 
 ### 3.4 Como otimizei o repositório para IA
 
