@@ -8,7 +8,7 @@
 #   make up          Sobe infraestrutura (Mosquitto + TimescaleDB)
 #   make test-smoke  Testa conectividade com infraestrutura
 
-.PHONY: help up down ps logs test-smoke test lint clean \
+.PHONY: help up down ps logs build test-smoke test lint clean \
         migrate migrate-revision migrate-down migrate-history migrate-current \
         seed setup-db
 
@@ -21,8 +21,13 @@ help:  ## Lista os targets disponíveis com descrição
 # ── Infraestrutura (docker compose) ──────────────────────────────────────────
 
 up:  ## Sobe Mosquitto + TimescaleDB em background
-	docker compose up -d
+	docker compose up -d mosquitto timescaledb
 	@echo "Aguardando healthchecks..."
+	@sleep 5
+	docker compose ps
+
+build:  ## Build da imagem Docker do consumidor
+	docker compose build consumidor
 	@sleep 5
 	docker compose ps
 

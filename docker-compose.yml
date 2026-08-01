@@ -1,12 +1,14 @@
-# Compose — Fase 2: Infra local
+# Compose — OEE Têxtil (Walking Skeleton)
 #
-# Dois serviços: Mosquitto (broker MQTT) e TimescaleDB (PostgreSQL + time-series).
-# Rede bridge oee-network compartilhada. Volume pgdata para persistência de dados.
+# Serviços: Mosquitto (broker MQTT), TimescaleDB (PostgreSQL + time-series),
+# e Consumidor (Fase 5: ingestão MQTT → banco).
+# Rede bridge oee-network compartilhada. Volume pgdata para persistência.
 #
 # Uso:
-#   make up          # sobe ambos
+#   make up          # sobe mosquitto + timescaledb
+#   make build       # build da imagem do consumidor
+#   docker compose up -d  # sobe todos os serviços
 #   make ps          # verifica status
-#   make test-smoke  # valida conectividade
 #   make down        # para tudo
 #   make clean       # para tudo + remove volume
 
@@ -52,6 +54,24 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    restart: unless-stopped
+
+  consumidor:
+    build: .
+    container_name: oee-consumidor
+    environment:
+      DATABASE_URL: postgresql://oee:oee_dev@timescaledb:5432/oee_textil
+      MQTT_BROKER_HOST: mosquitto
+      MQTT_BROKER_PORT: "1883"
+    volumes:
+      - ./data:/app/data
+    networks:
+      - oee-network
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
     restart: unless-stopped
 
 networks:
