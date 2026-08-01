@@ -95,6 +95,10 @@ jobs:
         with:
           enable-cache: false
       - run: uv sync
+      - name: Apply migrations
+        run: uv run alembic upgrade head
+      - name: Seed data
+        run: uv run python -m oee_textil.seed
       - name: pytest
         run: uv run pytest
 

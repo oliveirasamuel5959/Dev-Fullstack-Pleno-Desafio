@@ -134,27 +134,41 @@ def test_dead_letter_append(tmp_path):
 @pytest.mark.smoke
 def test_inserir_telemetria_dedup():
     """Segunda insercao da mesma telemetria deve ser ignorada (PK natural)."""
+    # Timestamp unico para nao conflitar com dados do simulador/consumidor
+    ts = datetime(2099, 1, 1, 0, 0, 0, 0, tzinfo=UTC)
     dados = {
         "maquina_id": "TEAR-G1-L2-07",
-        "ts_sensor": datetime(2026, 3, 10, 13, 45, 2, 140000, tzinfo=UTC),
+        "ts_sensor": ts,
         "rpm": 118.4,
         "voltas_acumuladas": 90418223,
         "temperatura_c": 41.2,
         "vibracao_mm_s": 2.1,
     }
 
+    # Limpar dados anteriores do mesmo timestamp (se existirem)
+    with SessionLocal() as session:
+        session.execute(
+            Telemetria.__table__.delete().where(
+                Telemetria.maquina_id == "TEAR-G1-L2-07",
+                Telemetria.ts_sensor == ts,
+            )
+        )
+        session.commit()
+
     # Primeira insercao
     ok1 = inserir_telemetria(dados)
     # Segunda insercao (mesma PK)
     ok2 = inserir_telemetria(dados)
 
-    # Pelo menos uma deve ter inserido; a segunda deve ser ignorada
-    assert ok1 is True or ok2 is True
+    # Primeira deve inserir, segunda deve ser ignorada como duplicata
+    assert ok1 is True
+    assert ok2 is False
     # Limpar para nao poluir
     with SessionLocal() as session:
         session.execute(
             Telemetria.__table__.delete().where(
-                Telemetria.maquina_id == "TEAR-G1-L2-07"
+                Telemetria.maquina_id == "TEAR-G1-L2-07",
+                Telemetria.ts_sensor == ts,
             )
         )
         session.commit()
@@ -163,23 +177,40 @@ def test_inserir_telemetria_dedup():
 @pytest.mark.smoke
 def test_inserir_evento_dedup_hash():
     """Segunda insercao do mesmo evento deve ser ignorada (content_hash)."""
+    # Timestamp unico para nao conflitar com dados do simulador/consumidor
+    ts = datetime(2099, 1, 1, 0, 0, 0, 0, tzinfo=UTC)
     dados = {
         "maquina_id": "TEAR-G1-L2-07",
         "motivo_codigo": "QBR_AGULHA",
         "motivo_descricao": "Quebra de agulha",
         "planejada": False,
-        "ts_sensor": datetime(2026, 3, 10, 13, 45, 0, tzinfo=UTC),
+        "ts_sensor": ts,
     }
+
+    # Limpar dados anteriores do mesmo timestamp (se existirem)
+    with SessionLocal() as session:
+        session.execute(
+            Parada.__table__.delete().where(
+                Parada.maquina_id == "TEAR-G1-L2-07",
+                Parada.ts_sensor == ts,
+            )
+        )
+        session.commit()
 
     ok1 = inserir_evento(Parada, dados)
     ok2 = inserir_evento(Parada, dados)
 
-    assert ok1 is True or ok2 is True
+    # Primeira deve inserir, segunda deve ser ignorada como duplicata
+    assert ok1 is True
+    assert ok2 is False
     # Limpar
     with SessionLocal() as session:
-        # Remove pela FK para evitar fk violation
+        # Remove pelo content_hash (mais preciso que maquina_id sozinho)
+        from oee_textil.services.consumidor import calcular_content_hash
+
+        hash_val = calcular_content_hash(dados)
         session.execute(
-            Parada.__table__.delete().where(Parada.maquina_id == "TEAR-G1-L2-07")
+            Parada.__table__.delete().where(Parada.content_hash == hash_val)
         )
         session.commit()
 
