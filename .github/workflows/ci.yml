@@ -1,0 +1,123 @@
+# CI — OEE Têxtil (Walking Skeleton)
+#
+# Pipeline: lint → typecheck → test → build-and-smoke.
+# Triggers: push na branch de desenvolvimento + pull_request contra main.
+#
+# Quality gates alinhados com o harness (CLAUDE.md §Toolchain):
+#   ruff check + format, mypy strict, pytest, docker compose smoke.
+#
+# Variáveis de ambiente: os valores abaixo espelham .env.example.
+# Service containers usam os mesmos nomes/credenciais do docker compose,
+# com localhost (GHA networking) em vez dos hostnames internos Docker.
+
+name: CI
+
+on:
+  push:
+    branches: [desafio/samuel-oliveira]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Lint (ruff) ──────────────────────────────────────────────────────────
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: false
+      - run: uv sync
+      - name: Ruff check
+        run: uv run ruff check
+      - name: Ruff format check
+        run: uv run ruff format --check
+
+  # ── Typecheck (mypy) ─────────────────────────────────────────────────────
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: false
+      - run: uv sync
+      - name: Mypy strict
+        run: uv run mypy
+
+  # ── Test (pytest com serviços reais) ─────────────────────────────────────
+
+  test:
+    needs: [lint, typecheck]
+    runs-on: ubuntu-latest
+
+    services:
+      mosquitto:
+        image: eclipse-mosquitto:2
+        ports:
+          - 1883:1883
+        options: >-
+          --health-cmd "mosquitto_sub -t '$$SYS/#' -C 1 -T 5"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 3
+          --health-start-period 5s
+
+      timescaledb:
+        image: timescale/timescaledb:latest-pg16
+        env:
+          POSTGRES_USER: oee
+          POSTGRES_PASSWORD: oee_dev
+          POSTGRES_DB: oee_textil
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+          --health-start-period 10s
+
+    env:
+      MQTT_BROKER_HOST: localhost
+      MQTT_BROKER_PORT: "1883"
+      DATABASE_URL: postgresql://oee:oee_dev@localhost:5432/oee_textil
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: false
+      - run: uv sync
+      - name: pytest
+        run: uv run pytest
+
+  # ── Build & Smoke (docker compose) ───────────────────────────────────────
+
+  build-and-smoke:
+    needs: [test]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker compose build
+      - name: Start services
+        run: |
+          docker compose up -d
+          echo "Aguardando healthchecks..."
+          sleep 20
+      - name: Verify health
+        run: |
+          docker compose ps
+          docker compose ps | grep -q 'healthy' || \
+            (echo "ERROR: Nem todos os serviços estão healthy" && exit 1)
+      - name: Stop services
+        if: always()
+        run: docker compose down --volumes

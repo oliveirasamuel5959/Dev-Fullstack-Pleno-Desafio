@@ -40,16 +40,16 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: oee
-      POSTGRES_PASSWORD: oee_dev
-      POSTGRES_DB: oee_textil
+      POSTGRES_USER: ${POSTGRES_USER:-oee}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-oee_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-oee_textil}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/timescaledb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - oee-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U oee -d oee_textil"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-oee} -d ${POSTGRES_DB:-oee_textil}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -60,9 +60,9 @@ services:
     build: .
     container_name: oee-consumidor
     environment:
-      DATABASE_URL: postgresql://oee:oee_dev@timescaledb:5432/oee_textil
+      DATABASE_URL: postgresql://${POSTGRES_USER:-oee}:${POSTGRES_PASSWORD:-oee_dev}@timescaledb:5432/${POSTGRES_DB:-oee_textil}
       MQTT_BROKER_HOST: mosquitto
-      MQTT_BROKER_PORT: "1883"
+      MQTT_BROKER_PORT: ${MQTT_BROKER_PORT:-1883}
     volumes:
       - ./data:/app/data
     networks:
@@ -80,7 +80,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://oee:oee_dev@timescaledb:5432/oee_textil
+      DATABASE_URL: postgresql://${POSTGRES_USER:-oee}:${POSTGRES_PASSWORD:-oee_dev}@timescaledb:5432/${POSTGRES_DB:-oee_textil}
     command: >
       /app/.venv/bin/python -u -m uvicorn
       oee_textil.routes.app:app

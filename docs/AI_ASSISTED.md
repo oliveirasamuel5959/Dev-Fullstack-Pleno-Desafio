@@ -51,6 +51,10 @@ Demonstre isso com artefatos como:
 | Claude Code (CLI) | Especificação e implementação completa da Fase 3: simulador MQTT (CLI argparse), leitor de NDJSON/CSV, publicador na topologia fabrica/... | deepseek-v4-pro |
 | Claude Code (CLI) | Especificação e implementação completa da Fase 4: modelos SQLAlchemy (7 tabelas), Alembic + migração com hypertable, seed idempotente, ADR-003 | deepseek-v4-pro |
 | Claude Code (CLI) | Especificação e implementação completa da Fase 5: consumidor MQTT (aiomqtt), dedup com content hash, dead-letter NDJSON, Dockerfile + compose, ADR-004 | deepseek-v4-pro |
+| Claude Code (CLI) | Especificação e implementação completa da Fase 6: funções puras de OEE (D/P/Q/OEE), repository, golden test (≈0,79), ADR-005 | deepseek-v4-pro |
+| Claude Code (CLI) | Especificação e implementação completa da Fase 7: API REST FastAPI (5 endpoints), TestClient, OpenAPI, ADR-006 | deepseek-v4-pro |
+| Claude Code (CLI) | Especificação e implementação completa da Fase 8: mini-dashboard ao vivo (SSE + HTML/JS vanilla), 4 cards, ADR-007 | deepseek-v4-pro |
+| Claude Code (CLI) | Especificação da Fase 9: CI/CD com GitHub Actions (ci.yml 4 jobs), ADR-008, DECISOES.md (criação inicial), atualização de AI_ASSISTED.md | deepseek-v4-pro |
 
 ### 3.2 Decisões em que a IA ajudou - e onde eu discordei dela
 
@@ -71,6 +75,11 @@ Demonstre isso com artefatos como:
 - **Fase 4 — D5 (Sem CHECK constraint em estado)**: A IA propôs validar literais de estado apenas na borda (Pydantic), sem constraint no banco. Concordei — evolução aditiva de schema não pode exigir migração.
 - **Fase 4 — D7 (Sem agregações agora)**: A IA propôs adiar `oee_agregado` para a Fase 6. Concordei — a estrutura depende das funções de cálculo que ainda não existem.
 - **Fase 4 — `.env` e `.env.example`**: Eu pedi para consolidar variáveis sensíveis em `.env` com template versionado. A IA criou ambos e implementou loader manual de ~15 linhas sem dependências novas.
+- **Fase 9 — D1 (GitHub Actions)**: A IA propôs GitHub Actions com 4 jobs sequenciais e service containers (Mosquitto + TimescaleDB) para o job de teste. Concordei — é nativo do repo, zero infra extra, e exercita os gates reais.
+- **Fase 9 — D2 (Pipeline sequencial)**: A IA propôs `needs` entre jobs para fail fast. Concordei — não faz sentido rodar testes se o lint falhou.
+- **Fase 9 — D3 (Sem cache/matrix)**: A IA propôs YAGNI — sem cache de dependências ou matrix build nesta fase. Concordei — o escopo é provar o gate, não otimizar pipeline.
+- **Fase 9 — D4 (DECISOES.md inicial)**: A IA notou que `docs/DECISOES.md` não existia (referenciado pelo mission.md mas nunca criado). Propôs criar o arquivo com todas as decisões documentadas, incluindo backfill das fases anteriores. Concordei — resolve uma lacuna de documentação.
+- **Fase 9 — D5 (Triggers: push na feature + PR main)**: A IA perguntou sobre triggers via AskUserQuestion. Respondi push em `desafio/samuel-oliveira` + PR contra `main`. A IA implementou exatamente o escopo escolhido, com `concurrency: cancel-in-progress` para evitar acúmulo de jobs.
 
 ### 3.3 O que eu revisei/corrigi no que a IA gerou
 
@@ -100,6 +109,8 @@ Demonstre isso com artefatos como:
 - **Fase 5 — D8 (ADR-004)**: A IA notou que ADR-003 já estava tomado pela Fase 4 e propôs ADR-004 por ordem cronológica. Concordei.
 - **Fase 5 — Containerização**: Eu pedi Dockerfile + compose service. A IA implementou com entrada parametrizável, healthcheck via depends_on, e volume para dead-letter.
 - **Fase 5 — `content_hash` contaminava o próprio cálculo**: A IA detectou que o hash era recalculado incluindo o `content_hash` da chamada anterior (mutação do dict). Corrigiu copiando o dict e adicionando `content_hash` à lista de exclusão.
+- **Fase 9 — `DECISOES.md` inexistente**: O plano dizia "Atualizar docs/DECISOES.md", mas o arquivo não existia. A IA detectou a lacuna e criou o arquivo completo com backfill das Fases 0-8 além da nova entrada de CI/CD. Corrigi: aprovado — era uma lacuna de documentação que precisava ser resolvida.
+- **Fase 9 — Service container health checks**: A IA configurou health checks para os service containers do GHA (Mosquitto e TimescaleDB) com comandos equivalentes aos do `docker-compose.yml`. O comando do Mosquitto usa `$$SYS` (escapado para YAML) — a IA acertou a sintaxe de escape na primeira tentativa.
 
 ### 3.4 Como otimizei o repositório para IA
 
