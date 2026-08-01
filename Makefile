@@ -8,7 +8,9 @@
 #   make up          Sobe infraestrutura (Mosquitto + TimescaleDB)
 #   make test-smoke  Testa conectividade com infraestrutura
 
-.PHONY: help up down ps logs test-smoke test lint clean
+.PHONY: help up down ps logs test-smoke test lint clean \
+        migrate migrate-revision migrate-down migrate-history migrate-current \
+        seed setup-db
 
 # ── Ajuda ────────────────────────────────────────────────────────────────────
 
@@ -49,6 +51,29 @@ test-docker-pub: ## Roda um comando de mosquitto_pub dentro do container oee-mos
 	
 test:  ## Roda todos os testes
 	uv run pytest -v
+
+# ── Banco de dados ───────────────────────────────────────────────────────────
+
+migrate:  ## Aplica migracoes pendentes (uv run alembic upgrade head)
+	uv run alembic upgrade head
+
+migrate-revision:  ## Gera nova migracao automatica (uso: make migrate-revision MSG="descricao")
+	uv run alembic revision --autogenerate -m "$(MSG)"
+
+migrate-down:  ## Reverte a ultima migracao (uv run alembic downgrade -1)
+	uv run alembic downgrade -1
+
+migrate-history:  ## Lista historico de migracoes
+	uv run alembic history
+
+migrate-current:  ## Mostra a migracao atual do banco
+	uv run alembic current
+
+seed:  ## Popula tabelas de catalogo com dados dos CSVs
+	uv run python -m oee_textil.seed
+
+setup-db: migrate seed  ## Aplica migracoes + popula tabelas (fluxo completo)
+	@echo "Banco pronto: migracoes aplicadas e tabelas populadas."
 
 # ── Qualidade ────────────────────────────────────────────────────────────────
 
