@@ -74,6 +74,24 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  api:
+    build: .
+    container_name: oee-api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://oee:oee_dev@timescaledb:5432/oee_textil
+    command: >
+      /app/.venv/bin/python -u -m uvicorn
+      oee_textil.routes.app:app
+      --host 0.0.0.0 --port 8000
+    networks:
+      - oee-network
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    restart: unless-stopped
+
 networks:
   oee-network:
     driver: bridge

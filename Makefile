@@ -26,10 +26,14 @@ up:  ## Sobe Mosquitto + TimescaleDB em background
 	@sleep 5
 	docker compose ps
 
-build:  ## Build da imagem Docker do consumidor
-	docker compose build consumidor
-	@sleep 5
-	docker compose ps
+build:  ## Build da imagem Docker (consumidor + api)
+	docker compose build
+
+api:  ## Sobe a API (docker compose up api)
+	docker compose up -d api
+
+api-logs:  ## Segue logs da API
+	docker compose logs -f api
 
 down:  ## Para e remove os containers (mantém volume pgdata)
 	docker compose down
